@@ -1,0 +1,37 @@
+{
+  "service": {
+    "name": "CodexNotia",
+    "pollIntervalMs": 1000,
+    "staleTurnTimeoutMs": 10800000,
+    "ignoreHistoricalSessionsOnFirstRun": true,
+    "internalErrorNotifyCooldownMs": 30000,
+    "notifiedTurnRetentionMs": "permanent",
+    "branchReplayTimeDriftMs": 5000,
+    "sessionDirectoryMissingWarnCooldownMs": 300000
+  },
+  "startup": {
+    "restartCount": 3,
+    "restartIntervalSeconds": 5
+  },
+  "codex": {
+    "homeDir": "",
+    "sessionsDir": "",
+    "appLogsDir": ""
+  },
+  "push": {
+    "url": "https://api.day.app/push/",
+    "deviceKey": "你的 Bark Key",
+    "level": "timeSensitive",
+    "group": "Codex通知",
+    "isArchive": "1",
+    "requestTimeoutMs": 10000,
+    "maxContentCharacters": 4096,
+    "maxEncodedBodyLength": 7000,
+    "maxAttempts": 3,
+    "retryDelayMs": 2000
+  },
+  "runtime": {
+    "stateDir": "",
+    "logDir": ""
+  }
+}
