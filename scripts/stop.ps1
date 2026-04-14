@@ -34,4 +34,4 @@ if (Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue)
   Stop-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
 }
 
-Write-Output "已停止计划任务和后台服务: $($context.TaskName)"
+Write-Output (Get-CodexNotiaText 'stop.completed' @($context.TaskName))

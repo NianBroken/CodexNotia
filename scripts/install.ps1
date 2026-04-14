@@ -39,7 +39,7 @@ Register-ScheduledTask `
   -Trigger $trigger `
   -Principal $principal `
   -Settings $settings `
-  -Description '持续监听 Codex 会话并推送回答完成或异常通知' `
+  -Description (Get-CodexNotiaText 'task.description') `
   | Out-Null
 
 Start-CodexNotiaHiddenScript `
@@ -48,4 +48,4 @@ Start-CodexNotiaHiddenScript `
   -ScriptPath $context.LaunchScriptPath `
   -AdditionalArguments @('-Silent')
 
-Write-Output "已安装计划任务并启动后台服务: $($context.TaskName)"
+Write-Output (Get-CodexNotiaText 'install.completed' @($context.TaskName))

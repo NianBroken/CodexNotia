@@ -932,6 +932,70 @@ test('项目内部异常通知使用项目名作为标题', async () => {
 });
 
 /**
+ * 验证项目内部错误通知第一次发送失败后，不会因为冷却记录被提前写入而错过下一次重试。
+ */
+test('项目内部异常通知失败后，同一错误仍然允许再次尝试发送', async () => {
+  const sessionsDir = await createTempDir();
+  const runtimeDir = await createTempDir();
+  let requestCount = 0;
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    let body = '';
+
+    request.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    request.on('end', () => {
+      requestCount += 1;
+      requests.push(body);
+
+      if (requestCount === 1) {
+        response.writeHead(500, { 'content-type': 'text/plain' });
+        response.end('failed');
+        return;
+      }
+
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end('{"code":200}');
+    });
+  });
+
+  await new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', resolve);
+  });
+
+  try {
+    const config = buildConfig({
+      sessionsDir,
+      runtimeDir,
+      port: server.address().port
+    });
+    config.push.maxAttempts = 1;
+    const service = new CodexNotiaService(config);
+    await service.stateStore.initialize();
+
+    await service.reportInternalError('测试内部异常', new Error('内部错误消息'));
+    await service.reportInternalError('测试内部异常', new Error('内部错误消息'));
+
+    assert.equal(requestCount, 2);
+    assert.ok(requests[1].includes('title=CodexNotia'));
+    assert.ok(requests[1].includes('%E5%86%85%E9%83%A8%E9%94%99%E8%AF%AF%E6%B6%88%E6%81%AF'));
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      });
+    });
+  }
+});
+
+/**
  * 验证历史基线中的旧完成事件不会在首次纳管时被重放成新通知。
  * 这个场景对应分支创建或服务中途接管已有会话文件时的历史内容。
  */

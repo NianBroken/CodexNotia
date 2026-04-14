@@ -16,7 +16,80 @@ function Set-CodexNotiaConsoleEncoding {
   } catch {
   }
 
-  $script:OutputEncoding = $utf8Encoding
+  $global:OutputEncoding = $utf8Encoding
+  $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+  $PSDefaultParameterValues['Set-Content:Encoding'] = 'utf8'
+  $PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
+}
+
+<#
+统一维护控制脚本用到的中文文本模板。
+这里全部使用 ASCII 安全的 Unicode 转义，避免运行时代码依赖脚本文件本身的保存编码。
+#>
+$script:CodexNotiaMessages = @{
+  'common.configReadFailedExitCode' = '\u8bfb\u53d6\u6700\u7ec8\u914d\u7f6e\u5931\u8d25\uff0c\u9000\u51fa\u7801: {0}'
+  'common.configReadFailedError' = '\u8bfb\u53d6\u6700\u7ec8\u914d\u7f6e\u5931\u8d25\uff0c\u9000\u51fa\u7801: {0}\uff0c\u9519\u8bef: {1}'
+  'common.hiddenLauncherMissing' = '\u9690\u85cf\u542f\u52a8\u8f85\u52a9\u811a\u672c\u4e0d\u5b58\u5728: {0}'
+  'common.targetScriptMissing' = '\u76ee\u6807 PowerShell \u811a\u672c\u4e0d\u5b58\u5728: {0}'
+  'task.description' = '\u6301\u7eed\u76d1\u542c Codex \u4f1a\u8bdd\u5e76\u63a8\u9001\u56de\u7b54\u5b8c\u6210\u6216\u5f02\u5e38\u901a\u77e5'
+  'disableAutostart.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728\uff0c\u65e0\u9700\u7981\u7528\u5f00\u673a\u81ea\u542f: {0}'
+  'disableAutostart.alreadyDisabled' = '\u4efb\u52a1\u8ba1\u5212\u5df2\u7ecf\u5904\u4e8e\u7981\u7528\u72b6\u6001: {0}'
+  'disableAutostart.taskGone' = '\u4efb\u52a1\u8ba1\u5212\u5df2\u4e0d\u5b58\u5728\uff0c\u540e\u7eed\u5f00\u673a\u81ea\u542f\u5df2\u5931\u6548: {0}'
+  'disableAutostart.completed' = '\u5df2\u7981\u7528\u540e\u7eed\u5f00\u673a\u81ea\u542f: {0}'
+  'disableAutostart.failedStillEnabled' = '\u7981\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25\uff0c\u4efb\u52a1\u4ecd\u5904\u4e8e\u542f\u7528\u72b6\u6001: {0}'
+  'disableAutostart.failed' = '\u7981\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25: {0}'
+  'enableAutostart.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728\uff0c\u65e0\u6cd5\u542f\u7528\u5f00\u673a\u81ea\u542f: {0}'
+  'enableAutostart.alreadyEnabled' = '\u4efb\u52a1\u8ba1\u5212\u5df2\u7ecf\u5904\u4e8e\u542f\u7528\u72b6\u6001: {0}'
+  'enableAutostart.taskGone' = '\u542f\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25\uff0c\u4efb\u52a1\u8ba1\u5212\u5df2\u4e0d\u5b58\u5728: {0}'
+  'enableAutostart.completed' = '\u5df2\u542f\u7528\u540e\u7eed\u5f00\u673a\u81ea\u542f: {0}'
+  'enableAutostart.failedStillDisabled' = '\u542f\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25\uff0c\u4efb\u52a1\u4ecd\u5904\u4e8e\u7981\u7528\u72b6\u6001: {0}'
+  'enableAutostart.failed' = '\u542f\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25: {0}'
+  'install.completed' = '\u5df2\u5b89\u88c5\u8ba1\u5212\u4efb\u52a1\u5e76\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}'
+  'removeTask.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728\uff0c\u65e0\u9700\u5220\u9664: {0}'
+  'removeTask.completed' = '\u5df2\u5220\u9664\u9879\u76ee\u5bf9\u5e94\u7684\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f: {0}'
+  'removeTask.failedStillExists' = '\u5220\u9664\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f\u5931\u8d25\uff0c\u4efb\u52a1\u4ecd\u7136\u5b58\u5728: {0}'
+  'removeTask.failed' = '\u5220\u9664\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f\u5931\u8d25: {0}'
+  'runService.exited' = 'CodexNotia \u540e\u53f0\u670d\u52a1\u9000\u51fa\uff0cexitCode={0}\uff0cfailureStreak={1}'
+  'runService.exception' = 'CodexNotia \u5305\u88c5\u8fdb\u7a0b\u6355\u83b7\u5f02\u5e38\uff0cfailureStreak={0}\uff0cmessage={1}'
+  'start.alreadyRunning' = '\u540e\u53f0\u670d\u52a1\u5df2\u7ecf\u5728\u8fd0\u884c\uff0cPID: {0}'
+  'start.completed' = '\u5df2\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}, PID: {1}'
+  'start.failed' = '\u540e\u53f0\u670d\u52a1\u672a\u6210\u529f\u8fdb\u5165\u8fd0\u884c\u72b6\u6001: {0}'
+  'stop.completed' = '\u5df2\u505c\u6b62\u8ba1\u5212\u4efb\u52a1\u548c\u540e\u53f0\u670d\u52a1: {0}'
+  'uninstall.completed' = '\u5df2\u5378\u8f7d\u8ba1\u5212\u4efb\u52a1\u5e76\u6e05\u7406\u8fd0\u884c\u72b6\u6001: {0}'
+}
+
+function Convert-CodexNotiaEscapedUnicodeText {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Text
+  )
+
+  return [System.Text.RegularExpressions.Regex]::Replace($Text, '\\u([0-9a-fA-F]{4})', {
+    param($Match)
+    return [char][Convert]::ToInt32($Match.Groups[1].Value, 16)
+  })
+}
+
+function Get-CodexNotiaText {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Key,
+    [object[]]$Arguments = @()
+  )
+
+  $template = $script:CodexNotiaMessages[$Key]
+
+  if ($null -eq $template) {
+    throw "Missing text key: $Key"
+  }
+
+  $decodedText = Convert-CodexNotiaEscapedUnicodeText -Text $template
+
+  if ($Arguments.Count -eq 0) {
+    return $decodedText
+  }
+
+  return [string]::Format($decodedText, $Arguments)
 }
 
 <#
@@ -152,6 +225,8 @@ function Get-CodexNotiaPowerShellPath {
 <#
 读取经过 Node 侧归一化后的最终配置。
 这样控制脚本可以直接复用默认值、环境变量展开和相对路径解析结果。
+这里不直接接 PowerShell 对外部进程标准输出的解码结果，而是重定向到 UTF 8 临时文件后再读取。
+这样可以避开 Windows PowerShell 5.1 对中文输出的历史兼容问题。
 #>
 function Get-CodexNotiaResolvedConfig {
   param(
@@ -163,14 +238,36 @@ function Get-CodexNotiaResolvedConfig {
   $entryPath = Join-Path $projectRoot 'src\main.mjs'
   $configPath = Get-CodexNotiaConfigPath -ProjectRoot $projectRoot
   $nodeCommand = Get-Command node -ErrorAction Stop
-  $configOutput = & $nodeCommand.Source $entryPath config show --config $configPath
+  $stdoutPath = [System.IO.Path]::GetTempFileName()
+  $stderrPath = [System.IO.Path]::GetTempFileName()
 
-  if ($LASTEXITCODE -ne 0) {
-    throw "读取最终配置失败，退出码: $LASTEXITCODE"
+  try {
+    $process = Start-Process `
+      -FilePath $nodeCommand.Source `
+      -ArgumentList @($entryPath, 'config', 'show', '--config', $configPath) `
+      -WorkingDirectory $projectRoot `
+      -WindowStyle Hidden `
+      -Wait `
+      -PassThru `
+      -RedirectStandardOutput $stdoutPath `
+      -RedirectStandardError $stderrPath
+
+    if ($process.ExitCode -ne 0) {
+      $errorText = Read-CodexNotiaUtf8Text -Path $stderrPath
+
+      if ([string]::IsNullOrWhiteSpace($errorText)) {
+        throw (Get-CodexNotiaText 'common.configReadFailedExitCode' @($process.ExitCode))
+      }
+
+      throw (Get-CodexNotiaText 'common.configReadFailedError' @($process.ExitCode, $errorText.Trim()))
+    }
+
+    $configText = Read-CodexNotiaUtf8Text -Path $stdoutPath
+    return $configText | ConvertFrom-Json
+  } finally {
+    Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
   }
-
-  $configText = $configOutput -join [Environment]::NewLine
-  return $configText | ConvertFrom-Json
 }
 
 <#
@@ -233,11 +330,11 @@ function Start-CodexNotiaHiddenScript {
   )
 
   if (-not (Test-Path -LiteralPath $LauncherPath)) {
-    throw "隐藏启动辅助脚本不存在: $LauncherPath"
+    throw (Get-CodexNotiaText 'common.hiddenLauncherMissing' @($LauncherPath))
   }
 
   if (-not (Test-Path -LiteralPath $ScriptPath)) {
-    throw "目标 PowerShell 脚本不存在: $ScriptPath"
+    throw (Get-CodexNotiaText 'common.targetScriptMissing' @($ScriptPath))
   }
 
   $wscriptPath = Get-CodexNotiaWscriptPath

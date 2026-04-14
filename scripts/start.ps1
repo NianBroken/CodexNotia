@@ -24,7 +24,7 @@ $context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
 $serviceLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
 
 if ($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid)) {
-  Write-Output ('后台服务已经在运行，PID: {0}' -f $serviceLock.pid)
+  Write-Output (Get-CodexNotiaText 'start.alreadyRunning' @($serviceLock.pid))
   exit 0
 }
 
@@ -54,12 +54,12 @@ while ((Get-Date) -lt $deadline) {
   $startedLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
 
   if ($startedLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $startedLock.pid)) {
-    Write-Output ('已启动后台服务: {0}, PID: {1}' -f $context.TaskName, $startedLock.pid)
+    Write-Output (Get-CodexNotiaText 'start.completed' @($context.TaskName, $startedLock.pid))
     exit 0
   }
 
   Start-Sleep -Milliseconds 500
 }
 
-Write-Output "后台服务未成功进入运行状态: $($context.TaskName)"
+Write-Output (Get-CodexNotiaText 'start.failed' @($context.TaskName))
 exit 1

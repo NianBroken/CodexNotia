@@ -1184,7 +1184,7 @@ export class CodexNotiaService {
     const now = Date.now();
     const lastSentAt = this.internalErrorHistory.get(fingerprint) ?? 0;
 
-    await this.logger.errorBlock(stage, errorText, context);
+    await this.writeLoggerSafely('errorBlock', stage, errorText, context);
 
     if (this.internalErrorSending) {
       return;
@@ -1194,7 +1194,6 @@ export class CodexNotiaService {
       return;
     }
 
-    this.internalErrorHistory.set(fingerprint, now);
     this.internalErrorSending = true;
 
     try {
@@ -1206,11 +1205,14 @@ export class CodexNotiaService {
         })
       );
       await pushToBark(this.config, notification, this.logger);
-      await this.logger.warn('内部错误通知已发送', {
+      this.internalErrorHistory.set(fingerprint, now);
+      await this.writeLoggerSafely('warn', '内部错误通知已发送', {
         stage
       });
     } catch (pushError) {
-      await this.logger.errorBlock(
+      this.internalErrorHistory.delete(fingerprint);
+      await this.writeLoggerSafely(
+        'errorBlock',
         '内部错误通知发送失败',
         pushError instanceof Error ? pushError.stack || pushError.message : String(pushError),
         {
@@ -1219,6 +1221,23 @@ export class CodexNotiaService {
       );
     } finally {
       this.internalErrorSending = false;
+    }
+  }
+
+  /**
+   * 以“不影响主流程”为前提写项目日志。
+   * 内部错误路径本身不能再被日志写入失败打断，否则手机通知链路会被反向拖垮。
+   */
+  async writeLoggerSafely(methodName, ...args) {
+    const targetMethod = this.logger?.[methodName];
+
+    if (typeof targetMethod !== 'function') {
+      return;
+    }
+
+    try {
+      await targetMethod.apply(this.logger, args);
+    } catch {
     }
   }
 

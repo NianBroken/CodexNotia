@@ -1,0 +1,8 @@
+# 统一文本归一化规则，让 Git 只根据真实内容差异判断修改状态。
+* text=auto eol=lf
+
+# 索引里保留无 BOM 的规范内容，工作区里的 PowerShell 脚本继续保留 UTF 8 BOM。
+*.ps1 text eol=lf filter=codexnotia-ps1-bom
+
+# 二进制资源禁止参与文本归一化。
+*.png binary

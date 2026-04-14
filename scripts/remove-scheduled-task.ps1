@@ -14,7 +14,7 @@ try {
   $task = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
 
   if (-not $task) {
-    Write-Output "任务计划不存在，无需删除: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'removeTask.taskMissing' @($context.TaskName))
     exit 0
   }
 
@@ -22,13 +22,13 @@ try {
   $updatedTask = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
 
   if (-not $updatedTask) {
-    Write-Output "已删除项目对应的任务计划程序: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'removeTask.completed' @($context.TaskName))
     exit 0
   }
 
-  Write-Output "删除任务计划程序失败，任务仍然存在: $($context.TaskName)"
+  Write-Output (Get-CodexNotiaText 'removeTask.failedStillExists' @($context.TaskName))
   exit 1
 } catch {
-  Write-Output ('删除任务计划程序失败: {0}' -f $_.Exception.Message)
+  Write-Output (Get-CodexNotiaText 'removeTask.failed' @($_.Exception.Message))
   exit 1
 }

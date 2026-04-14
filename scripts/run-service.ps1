@@ -63,7 +63,7 @@ try {
       }
 
       $failureStreak += 1
-      Write-CodexNotiaConsoleMessage "CodexNotia 后台服务退出，exitCode=$exitCode，failureStreak=$failureStreak"
+      Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'runService.exited' @($exitCode, $failureStreak))
 
       if ($failureStreak -gt $retryCount) {
         $failureStreak = 1
@@ -71,7 +71,7 @@ try {
     } catch {
       $failureStreak += 1
       Write-CodexNotiaConsoleMessage (
-        'CodexNotia 包装进程捕获异常，failureStreak={0}，message={1}' -f $failureStreak, $_.Exception.Message
+        Get-CodexNotiaText 'runService.exception' @($failureStreak, $_.Exception.Message)
       )
     }
 

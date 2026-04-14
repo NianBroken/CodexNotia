@@ -163,3 +163,76 @@ test('Bark 推送失败两次后第三次成功', async () => {
     });
   });
 });
+
+/**
+ * 验证 Bark 发送路径里的附加日志不会反向打断真正的通知请求。
+ * 这里只模拟 logger 全部失败，目标是确保发送结果仍由 Bark 响应本身决定。
+ */
+test('Bark 日志写入失败时，通知发送仍然继续', async () => {
+  let requestCount = 0;
+  const server = http.createServer((request, response) => {
+    requestCount += 1;
+    request.resume();
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end('{"code":200,"message":"success"}');
+  });
+
+  await new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', resolve);
+  });
+
+  const address = server.address();
+  const config = {
+    push: {
+      url: `http://127.0.0.1:${address.port}/push/`,
+      deviceKey: 'test-device',
+      level: 'timeSensitive',
+      group: 'Codex通知',
+      isArchive: '1',
+      requestTimeoutMs: 500,
+      maxContentCharacters: 4096,
+      maxEncodedBodyLength: 7000,
+      maxAttempts: 1,
+      retryDelayMs: 20
+    }
+  };
+  const failingLogger = {
+    async info() {
+      throw new Error('logger info failed');
+    },
+    async warn() {
+      throw new Error('logger warn failed');
+    },
+    async infoBlock() {
+      throw new Error('logger infoBlock failed');
+    },
+    async warnBlock() {
+      throw new Error('logger warnBlock failed');
+    },
+    async errorBlock() {
+      throw new Error('logger errorBlock failed');
+    }
+  };
+
+  try {
+    const result = await pushToBark(config, {
+      title: 'CodexNotia',
+      subtitle: '2026-04-13 01:02:03',
+      markdown: '内部错误通知'
+    }, failingLogger);
+
+    assert.equal(result, '{"code":200,"message":"success"}');
+    assert.equal(requestCount, 1);
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      });
+    });
+  }
+});

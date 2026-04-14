@@ -35,4 +35,4 @@ if (Test-Path -LiteralPath $context.LogDir) {
   Remove-Item -LiteralPath $context.LogDir -Recurse -Force
 }
 
-Write-Output "已卸载计划任务并清理运行状态: $($context.TaskName)"
+Write-Output (Get-CodexNotiaText 'uninstall.completed' @($context.TaskName))

@@ -15,12 +15,12 @@ try {
   $task = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
 
   if (-not $task) {
-    Write-Output "任务计划不存在，无法启用开机自启: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'enableAutostart.taskMissing' @($context.TaskName))
     exit 1
   }
 
   if ([bool]$task.Settings.Enabled) {
-    Write-Output "任务计划已经处于启用状态: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'enableAutostart.alreadyEnabled' @($context.TaskName))
     exit 0
   }
 
@@ -28,18 +28,18 @@ try {
   $updatedTask = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
 
   if (-not $updatedTask) {
-    Write-Output "启用开机自启失败，任务计划已不存在: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'enableAutostart.taskGone' @($context.TaskName))
     exit 1
   }
 
   if ([bool]$updatedTask.Settings.Enabled) {
-    Write-Output "已启用后续开机自启: $($context.TaskName)"
+    Write-Output (Get-CodexNotiaText 'enableAutostart.completed' @($context.TaskName))
     exit 0
   }
 
-  Write-Output "启用开机自启失败，任务仍处于禁用状态: $($context.TaskName)"
+  Write-Output (Get-CodexNotiaText 'enableAutostart.failedStillDisabled' @($context.TaskName))
   exit 1
 } catch {
-  Write-Output ('启用开机自启失败: {0}' -f $_.Exception.Message)
+  Write-Output (Get-CodexNotiaText 'enableAutostart.failed' @($_.Exception.Message))
   exit 1
 }

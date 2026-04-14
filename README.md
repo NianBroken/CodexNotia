@@ -47,7 +47,7 @@ Npm 11.11.0
 
 1. 将项目放到一个准备长期保存的位置，例如 `D:\CodexNotia`。
 
-2. 打开 Bark App → 设置 → Device Token → 复制。
+2. 打开 Bark App，复制 `device_key`。
 
 3. 打开 CodexNotia 的 `config\codexnotia.example.json`，将第 23 行 `deviceKey` 的值替换为你的 Bark Key。
 

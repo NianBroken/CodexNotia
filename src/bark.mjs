@@ -82,9 +82,10 @@ function normalizeNotificationScene(scene) {
 export async function pushToBark(config, notification, logger) {
   let lastError;
   let currentNotification = fitNotificationToEncodedBodyLimit(config, notification);
+  const safeLogger = createSafeBarkLogger(logger);
 
-  if (logger) {
-    await logger.infoBlock(
+  if (safeLogger) {
+    await safeLogger.infoBlock(
       '通知实际发送内容',
       renderNotificationSingleLine(currentNotification),
       {
@@ -100,8 +101,8 @@ export async function pushToBark(config, notification, logger) {
 
   for (let attempt = 1; attempt <= config.push.maxAttempts; attempt += 1) {
     try {
-      if (logger) {
-        await logger.info('开始发送通知请求', {
+      if (safeLogger) {
+        await safeLogger.info('开始发送通知请求', {
           attempt,
           titleLength: getCharacterLength(currentNotification.title),
           subtitleLength: getCharacterLength(currentNotification.subtitle),
@@ -112,8 +113,8 @@ export async function pushToBark(config, notification, logger) {
       const response = await sendRequest(config, currentNotification);
       const responseText = await response.text();
 
-      if (logger) {
-        await logger.infoBlock(
+      if (safeLogger) {
+        await safeLogger.infoBlock(
           '通知服务响应内容',
           responseText,
           {
@@ -127,8 +128,8 @@ export async function pushToBark(config, notification, logger) {
         if (response.status === 413) {
           currentNotification = shrinkNotificationForRetry(config, currentNotification);
 
-          if (logger) {
-            await logger.warnBlock(
+          if (safeLogger) {
+            await safeLogger.warnBlock(
               '通知内容因请求过大被缩短',
               renderNotificationSingleLine(currentNotification),
               {
@@ -146,8 +147,8 @@ export async function pushToBark(config, notification, logger) {
         throw new Error(`Bark 推送失败，HTTP ${response.status}，响应: ${responseText}`);
       }
 
-      if (logger) {
-        await logger.info('Bark 推送成功', {
+      if (safeLogger) {
+        await safeLogger.info('Bark 推送成功', {
           attempt,
           title: currentNotification.title
         });
@@ -157,8 +158,8 @@ export async function pushToBark(config, notification, logger) {
     } catch (error) {
       lastError = error;
 
-      if (logger) {
-        await logger.errorBlock(
+      if (safeLogger) {
+        await safeLogger.errorBlock(
           '通知请求失败',
           error instanceof Error ? error.stack || error.message : String(error),
           {
@@ -169,8 +170,8 @@ export async function pushToBark(config, notification, logger) {
       }
 
       if (attempt < config.push.maxAttempts) {
-        if (logger) {
-          await logger.warn('准备进行通知重试', {
+        if (safeLogger) {
+          await safeLogger.warn('准备进行通知重试', {
             currentAttempt: attempt,
             nextAttempt: attempt + 1,
             retryDelayMs: config.push.retryDelayMs
@@ -185,6 +186,41 @@ export async function pushToBark(config, notification, logger) {
   }
 
   throw lastError;
+}
+
+/**
+ * 包一层“不会把异常再抛回主流程”的日志接口。
+ * 通知发送链路里的附加日志只用于排查，日志写入失败时不能反向打断 Bark 请求。
+ */
+function createSafeBarkLogger(logger) {
+  if (!logger) {
+    return null;
+  }
+
+  return {
+    info: (...args) => callBarkLoggerSafely(logger, 'info', args),
+    warn: (...args) => callBarkLoggerSafely(logger, 'warn', args),
+    infoBlock: (...args) => callBarkLoggerSafely(logger, 'infoBlock', args),
+    warnBlock: (...args) => callBarkLoggerSafely(logger, 'warnBlock', args),
+    errorBlock: (...args) => callBarkLoggerSafely(logger, 'errorBlock', args)
+  };
+}
+
+/**
+ * 安全调用单个日志方法。
+ * 这里只吞掉日志写入本身的异常，不改动真正的通知发送结果。
+ */
+async function callBarkLoggerSafely(logger, methodName, args) {
+  const method = logger?.[methodName];
+
+  if (typeof method !== 'function') {
+    return;
+  }
+
+  try {
+    await method.apply(logger, args);
+  } catch {
+  }
 }
 
 /**
