@@ -200,6 +200,9 @@ const TERMINAL_FAILURE_REASONS = new Set([
 export class CodexNotiaService {
   constructor(config) {
     this.config = config;
+    this.serviceStartedAt = new Date();
+    this.serviceStartedAtMs = this.serviceStartedAt.getTime();
+    this.serviceStartedAtIso = this.serviceStartedAt.toISOString();
     this.logFilePath = path.join(
       config.runtime.logDir,
       `codexnotia-${formatLocalDateTime(new Date()).slice(0, 10)}.log`
@@ -269,6 +272,7 @@ export class CodexNotiaService {
 
     if (!sessionsDirExists) {
       await this.reportMissingSessionsDirectory();
+      this.suppressHistoricalTurnTimeouts();
       await this.checkStaleTurns();
       this.pruneNotifiedTurnKeys();
       this.pruneInternalErrorHistory();
@@ -295,6 +299,7 @@ export class CodexNotiaService {
     }
 
     this.pruneMissingFileStates(sessionFileSet);
+    this.suppressHistoricalTurnTimeouts();
     await this.checkStaleTurns();
     this.pruneNotifiedTurnKeys();
     this.pruneInternalErrorHistory();
@@ -453,8 +458,10 @@ export class CodexNotiaService {
       * INTERNAL_ERROR_HISTORY_RETENTION_MULTIPLIER;
     const now = Date.now();
 
-    for (const [fingerprint, sentAt] of this.internalErrorHistory.entries()) {
-      if (now - sentAt > retentionMs) {
+    for (const [fingerprint, record] of this.internalErrorHistory.entries()) {
+      const lastObservedAt = Number(record?.lastObservedAt ?? 0);
+
+      if (lastObservedAt <= 0 || now - lastObservedAt > retentionMs) {
         this.internalErrorHistory.delete(fingerprint);
       }
     }
@@ -579,12 +586,7 @@ export class CodexNotiaService {
       fileState.currentTurnId = turnId;
       fileState.latestFinalAnswerText = '';
       fileState.latestErrorMessage = '';
-      fileState.turns[turnId] = {
-        startedAt: event.timestamp ?? nowIsoString(),
-        lastEventAt: event.timestamp ?? nowIsoString(),
-        finalAnswerText: '',
-        lastErrorMessage: ''
-      };
+      fileState.turns[turnId] = createTurnState(event.timestamp ?? nowIsoString());
 
       if (allowLogs) {
         await this.logger.info('检测到新 turn', {
@@ -603,6 +605,10 @@ export class CodexNotiaService {
 
     const targetTurnId = trimField(event.payload.turn_id);
     const currentTurn = getCurrentTurnState(fileState, targetTurnId);
+
+    if (allowNotifications && currentTurn) {
+      this.resumeSuppressedTurnTimeout(currentTurn, eventTimestamp);
+    }
 
     if (
       event.type === 'event_msg'
@@ -760,10 +766,17 @@ export class CodexNotiaService {
           eventTimestamp: event.timestamp ?? nowIsoString()
         });
       }
-      await pushToBark(this.config, notification, this.logger);
-      this.stateStore.getState().notifiedTurnKeys[notificationKey] = nowIsoString();
+      const notificationSent = await this.sendTurnNotification(notification, {
+        notificationKey,
+        failureTitle: 'AI 错误通知发送失败，当前 turn 已停止继续重试',
+        metadata: {
+          sessionId: fileState.sessionId,
+          turnId,
+          eventTimestamp: event.timestamp ?? nowIsoString()
+        }
+      });
 
-      if (allowLogs) {
+      if (notificationSent && allowLogs) {
         await this.logger.info('错误通知发送成功', {
           sessionId: fileState.sessionId,
           turnId,
@@ -841,10 +854,17 @@ export class CodexNotiaService {
             eventTimestamp: event.timestamp ?? nowIsoString()
           });
         }
-        await pushToBark(this.config, notification, this.logger);
-        this.stateStore.getState().notifiedTurnKeys[notificationKey] = nowIsoString();
+        const notificationSent = await this.sendTurnNotification(notification, {
+          notificationKey,
+          failureTitle: 'AI 错误通知发送失败，当前 turn 已停止继续重试',
+          metadata: {
+            sessionId: fileState.sessionId,
+            turnId,
+            eventTimestamp: event.timestamp ?? nowIsoString()
+          }
+        });
 
-        if (allowLogs) {
+        if (notificationSent && allowLogs) {
           await this.logger.info('错误通知发送成功', {
             sessionId: fileState.sessionId,
             turnId,
@@ -883,10 +903,17 @@ export class CodexNotiaService {
             eventTimestamp: event.timestamp ?? nowIsoString()
           });
         }
-        await pushToBark(this.config, notification, this.logger);
-        this.stateStore.getState().notifiedTurnKeys[notificationKey] = nowIsoString();
+        const notificationSent = await this.sendTurnNotification(notification, {
+          notificationKey,
+          failureTitle: '成功通知发送失败，当前 turn 已停止继续重试',
+          metadata: {
+            sessionId: fileState.sessionId,
+            turnId,
+            eventTimestamp: event.timestamp ?? nowIsoString()
+          }
+        });
 
-        if (allowLogs) {
+        if (notificationSent && allowLogs) {
           await this.logger.info('成功通知发送成功', {
             sessionId: fileState.sessionId,
             turnId,
@@ -902,6 +929,8 @@ export class CodexNotiaService {
 
   /**
    * 检查超时未结束的活动 turn，并按错误路径补发通知。
+   * 这里只处理超时点落在当前进程观察窗口内的 turn，
+   * 启动前就已经停滞并过期的历史遗留 turn 会被前置隔离，避免启动瞬间误报。
    */
   async checkStaleTurns() {
     const now = Date.now();
@@ -909,13 +938,20 @@ export class CodexNotiaService {
 
     for (const [filePath, fileState] of Object.entries(state.files)) {
       for (const [turnId, turnState] of Object.entries(fileState.turns)) {
-        const lastEventAt = Date.parse(turnState.lastEventAt || turnState.startedAt);
+        const staleDeadlineAt = resolveTurnStaleDeadlineAt(
+          turnState,
+          this.config.service.staleTurnTimeoutMs
+        );
 
-        if (Number.isNaN(lastEventAt)) {
+        if (Number.isNaN(staleDeadlineAt)) {
           continue;
         }
 
-        if (now - lastEventAt < this.config.service.staleTurnTimeoutMs) {
+        if (turnState.timeoutSuppressedAt) {
+          continue;
+        }
+
+        if (now < staleDeadlineAt) {
           continue;
         }
 
@@ -935,7 +971,7 @@ export class CodexNotiaService {
         );
         const staleMessage = hydratedErrorMessage
           || 'Codex 在等待最终完成事件时停止更新，已超过配置的超时阈值。';
-        const staleOccurredAt = new Date(lastEventAt + this.config.service.staleTurnTimeoutMs);
+        const staleOccurredAt = new Date(staleDeadlineAt);
 
         await this.logger.warnBlock('AI 超时错误消息', toSingleLineLogText(staleMessage), {
           filePath,
@@ -954,14 +990,23 @@ export class CodexNotiaService {
           sessionId: fileState.sessionId,
           turnId
         });
-        await pushToBark(this.config, notification, this.logger);
-        state.notifiedTurnKeys[notificationKey] = nowIsoString();
-
-        await this.logger.warn('超时错误通知发送成功', {
-          filePath,
-          sessionId: fileState.sessionId,
-          turnId
+        const notificationSent = await this.sendTurnNotification(notification, {
+          notificationKey,
+          failureTitle: '超时错误通知发送失败，当前 turn 已停止继续重试',
+          metadata: {
+            filePath,
+            sessionId: fileState.sessionId,
+            turnId
+          }
         });
+
+        if (notificationSent) {
+          await this.logger.warn('超时错误通知发送成功', {
+            filePath,
+            sessionId: fileState.sessionId,
+            turnId
+          });
+        }
 
         deleteTurn(fileState, turnId);
         clearTransientFileState(fileState);
@@ -1174,6 +1219,47 @@ export class CodexNotiaService {
   }
 
   /**
+   * 把超时点早于当前进程启动时刻的旧活动 turn 标记为启动隔离。
+   * 这类 turn 属于历史遗留或离线期间发生的停滞，当前进程不会在启动瞬间补发超时错误。
+   * 只有后续再次看到该 turn 的新事件，它才会重新回到实时超时跟踪里。
+   */
+  suppressHistoricalTurnTimeouts() {
+    const state = this.stateStore.getState();
+
+    for (const fileState of Object.values(state.files)) {
+      for (const turnState of Object.values(fileState.turns ?? {})) {
+        if (
+          !shouldSuppressTurnTimeoutAtStartup(
+            turnState,
+            this.config.service.staleTurnTimeoutMs,
+            this.serviceStartedAtMs
+          )
+        ) {
+          continue;
+        }
+
+        turnState.timeoutSuppressedAt = this.serviceStartedAtIso;
+      }
+    }
+  }
+
+  /**
+   * 如果历史遗留 turn 在当前进程启动后又收到了新事件，
+   * 就恢复它的实时超时资格，让后续超时继续按正常路径处理。
+   */
+  resumeSuppressedTurnTimeout(turnState, eventTimestamp) {
+    if (!turnState?.timeoutSuppressedAt) {
+      return;
+    }
+
+    const eventTimestampMs = Date.parse(eventTimestamp || '');
+
+    if (!Number.isNaN(eventTimestampMs) && eventTimestampMs > this.serviceStartedAtMs) {
+      turnState.timeoutSuppressedAt = '';
+    }
+  }
+
+  /**
    * 统一记录内部错误，并按冷却时间决定是否发项目场景通知。
    */
   async reportInternalError(stage, error, context = {}) {
@@ -1182,15 +1268,25 @@ export class CodexNotiaService {
       : String(error);
     const fingerprint = `${stage}:${error instanceof Error ? error.message : String(error)}`;
     const now = Date.now();
-    const lastSentAt = this.internalErrorHistory.get(fingerprint) ?? 0;
+    const internalErrorRecord = getOrCreateInternalErrorRecord(this.internalErrorHistory, fingerprint);
+    const hasQuietedDown = (
+      internalErrorRecord.lastObservedAt > 0
+      && now - internalErrorRecord.lastObservedAt >= this.config.service.internalErrorNotifyCooldownMs
+    );
 
-    await this.writeLoggerSafely('errorBlock', stage, errorText, context);
+    internalErrorRecord.lastObservedAt = now;
 
-    if (this.internalErrorSending) {
-      return;
+    if (hasQuietedDown) {
+      internalErrorRecord.logged = false;
+      internalErrorRecord.finalized = false;
     }
 
-    if (now - lastSentAt < this.config.service.internalErrorNotifyCooldownMs) {
+    if (!internalErrorRecord.logged) {
+      await this.writeLoggerSafely('errorBlock', stage, errorText, context);
+      internalErrorRecord.logged = true;
+    }
+
+    if (internalErrorRecord.finalized || this.internalErrorSending) {
       return;
     }
 
@@ -1205,15 +1301,17 @@ export class CodexNotiaService {
         })
       );
       await pushToBark(this.config, notification, this.logger);
-      this.internalErrorHistory.set(fingerprint, now);
+      internalErrorRecord.finalized = true;
+      internalErrorRecord.lastFinishedAt = Date.now();
       await this.writeLoggerSafely('warn', '内部错误通知已发送', {
         stage
       });
     } catch (pushError) {
-      this.internalErrorHistory.delete(fingerprint);
+      internalErrorRecord.finalized = true;
+      internalErrorRecord.lastFinishedAt = Date.now();
       await this.writeLoggerSafely(
         'errorBlock',
-        '内部错误通知发送失败',
+        '内部错误通知发送失败，已停止继续重试',
         pushError instanceof Error ? pushError.stack || pushError.message : String(pushError),
         {
           stage
@@ -1221,6 +1319,33 @@ export class CodexNotiaService {
       );
     } finally {
       this.internalErrorSending = false;
+    }
+  }
+
+  /**
+   * 发送单轮 turn 通知。
+   * Bark 自身已经按配置完成有限次重试，这里只负责把失败收口成终态，
+   * 避免同一个 turn 在主循环或超时扫描里被反复重试和反复刷日志。
+   */
+  async sendTurnNotification(notification, options) {
+    const {
+      notificationKey,
+      failureTitle,
+      metadata = {}
+    } = options;
+
+    try {
+      await pushToBark(this.config, notification, this.logger);
+      this.stateStore.getState().notifiedTurnKeys[notificationKey] = nowIsoString();
+      return true;
+    } catch (error) {
+      await this.writeLoggerSafely(
+        'errorBlock',
+        failureTitle,
+        error instanceof Error ? error.stack || error.message : String(error),
+        metadata
+      );
+      return false;
     }
   }
 
@@ -1341,6 +1466,15 @@ function getOrCreateFileState(state, filePath) {
   state.files[filePath].turns ??= {};
   state.files[filePath].primed ??= state.files[filePath].offset > 0;
 
+  for (const [turnId, turnState] of Object.entries(state.files[filePath].turns)) {
+    if (!turnState || typeof turnState !== 'object' || Array.isArray(turnState)) {
+      state.files[filePath].turns[turnId] = createTurnState();
+      continue;
+    }
+
+    normalizeTurnState(turnState);
+  }
+
   return state.files[filePath];
 }
 
@@ -1359,6 +1493,28 @@ function createFileState(filePath) {
     turns: {},
     primed: false
   };
+}
+
+/**
+ * 生成单个 turn 的默认状态。
+ * 启动隔离标记会和 turn 一起持久化，避免恢复旧状态时出现字段缺失。
+ */
+function createTurnState(startedAt = '') {
+  return {
+    startedAt,
+    lastEventAt: startedAt,
+    finalAnswerText: '',
+    lastErrorMessage: '',
+    timeoutSuppressedAt: ''
+  };
+}
+
+function normalizeTurnState(turnState) {
+  turnState.startedAt ??= '';
+  turnState.lastEventAt ??= turnState.startedAt || '';
+  turnState.finalAnswerText ??= '';
+  turnState.lastErrorMessage ??= '';
+  turnState.timeoutSuppressedAt ??= '';
 }
 
 /**
@@ -1400,6 +1556,19 @@ function deleteTurn(fileState, turnId) {
   }
 }
 
+function getOrCreateInternalErrorRecord(historyMap, fingerprint) {
+  if (!historyMap.has(fingerprint)) {
+    historyMap.set(fingerprint, {
+      finalized: false,
+      lastFinishedAt: 0,
+      lastObservedAt: 0,
+      logged: false
+    });
+  }
+
+  return historyMap.get(fingerprint);
+}
+
 /**
  * 构造通知去重键。
  * 同一会话的同一 turn 与同一通知类型只允许发送一次。
@@ -1414,6 +1583,34 @@ function buildCodexNotificationOptions(config, overrides = {}) {
     maxContentCharacters: config.push.maxContentCharacters,
     ...overrides
   };
+}
+
+/**
+ * 计算单个活动 turn 进入超时终态的绝对时间。
+ * 如果时间戳缺失或非法，就返回 NaN，让上层跳过这次超时判定。
+ */
+function resolveTurnStaleDeadlineAt(turnState, staleTurnTimeoutMs) {
+  const lastEventAt = Date.parse(turnState?.lastEventAt || turnState?.startedAt || '');
+
+  if (Number.isNaN(lastEventAt)) {
+    return Number.NaN;
+  }
+
+  return lastEventAt + staleTurnTimeoutMs;
+}
+
+/**
+ * 判断一个活动 turn 的超时点是否早于当前进程启动时刻。
+ * 命中时说明它的停滞发生在本进程观察窗口之外，启动阶段不能把它当成新的超时错误。
+ */
+function shouldSuppressTurnTimeoutAtStartup(turnState, staleTurnTimeoutMs, serviceStartedAtMs) {
+  const staleDeadlineAt = resolveTurnStaleDeadlineAt(turnState, staleTurnTimeoutMs);
+
+  if (Number.isNaN(staleDeadlineAt)) {
+    return false;
+  }
+
+  return staleDeadlineAt <= serviceStartedAtMs;
 }
 
 /**

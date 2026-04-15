@@ -25,7 +25,8 @@ Set-CodexNotiaConsoleEncoding
 
 <#
 包装进程主循环。
-持续守护 `node src/main.mjs service run`，服务异常退出时按配置等待后重启。
+持续守护 `node src/main.mjs service run`，服务异常退出时只在配置允许的次数内等待并重启。
+达到 `restartCount` 上限后，包装进程会停止当前重启链路并退出。
 包装进程自己的锁文件会在退出时清理，避免留下长期陈旧的包装锁。
 #>
 $context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
@@ -66,13 +67,23 @@ try {
       Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'runService.exited' @($exitCode, $failureStreak))
 
       if ($failureStreak -gt $retryCount) {
-        $failureStreak = 1
+        Write-CodexNotiaConsoleMessage (
+          Get-CodexNotiaText 'runService.retryLimitReached' @($failureStreak, $retryCount)
+        )
+        exit 1
       }
     } catch {
       $failureStreak += 1
       Write-CodexNotiaConsoleMessage (
         Get-CodexNotiaText 'runService.exception' @($failureStreak, $_.Exception.Message)
       )
+
+      if ($failureStreak -gt $retryCount) {
+        Write-CodexNotiaConsoleMessage (
+          Get-CodexNotiaText 'runService.retryLimitReached' @($failureStreak, $retryCount)
+        )
+        exit 1
+      }
     }
 
     Start-Sleep -Seconds $retryDelaySeconds

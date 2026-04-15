@@ -51,6 +51,7 @@ $script:CodexNotiaMessages = @{
   'removeTask.failed' = '\u5220\u9664\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f\u5931\u8d25: {0}'
   'runService.exited' = 'CodexNotia \u540e\u53f0\u670d\u52a1\u9000\u51fa\uff0cexitCode={0}\uff0cfailureStreak={1}'
   'runService.exception' = 'CodexNotia \u5305\u88c5\u8fdb\u7a0b\u6355\u83b7\u5f02\u5e38\uff0cfailureStreak={0}\uff0cmessage={1}'
+  'runService.retryLimitReached' = 'CodexNotia \u540e\u53f0\u670d\u52a1\u5df2\u8fbe\u5230\u91cd\u8bd5\u4e0a\u9650\uff0cfailureStreak={0}\uff0crestartCount={1}\uff0c\u505c\u6b62\u7ee7\u7eed\u91cd\u542f'
   'start.alreadyRunning' = '\u540e\u53f0\u670d\u52a1\u5df2\u7ecf\u5728\u8fd0\u884c\uff0cPID: {0}'
   'start.completed' = '\u5df2\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}, PID: {1}'
   'start.failed' = '\u540e\u53f0\u670d\u52a1\u672a\u6210\u529f\u8fdb\u5165\u8fd0\u884c\u72b6\u6001: {0}'
