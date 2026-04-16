@@ -25,54 +25,36 @@ Set-CodexNotiaConsoleEncoding
 
 <#
 隐藏启动主流程。
-优先复用仍然存活的包装进程，清理陈旧锁后再拉起 `run-service.ps1`。
-这里会直接使用 Node 侧已经归一化的状态目录，确保默认配置和相对路径都能正确落地。
+这里只负责把包装进程稳定拉起，并验证包装进程已经进入运行状态。
+服务进程本身由包装进程继续守护和重启。
 #>
-$context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
+$context = $null
 
-New-Item -ItemType Directory -Force -Path $context.StateDir | Out-Null
+try {
+  $context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
+  $initialSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $context
+  $snapshot = Start-CodexNotiaWrapperProcess -Context $context -Silent:$Silent
 
-$wrapperLock = Read-CodexNotiaLockFile -Path $context.WrapperLockPath
+  if ($snapshot.WrapperRunning) {
+    if ($initialSnapshot.WrapperRunning) {
+      Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'launch.wrapperRunning' @($snapshot.WrapperPid))
+    } else {
+      Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'launch.wrapperStarted' @($snapshot.WrapperPid))
+    }
+    exit 0
+  }
 
-if ($wrapperLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $wrapperLock.pid)) {
-  Write-CodexNotiaConsoleMessage ('Wrapper already running, PID: {0}' -f $wrapperLock.pid)
-  exit 0
+  Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'launch.failed' @('wrapper not running'))
+  exit 1
+} catch {
+  if ($context) {
+    Write-CodexNotiaControlLog -Context $context -Level 'ERROR' -Message (
+      Get-CodexNotiaText 'control.log.failure' @(Get-CodexNotiaText 'operation.startWrapper')
+    ) -Metadata @{
+      error = $_.Exception.Message
+    }
+  }
+
+  Write-CodexNotiaConsoleMessage (Get-CodexNotiaText 'launch.failed' @($_.Exception.Message))
+  exit 1
 }
-
-if (Test-Path -LiteralPath $context.WrapperLockPath) {
-  Remove-Item -LiteralPath $context.WrapperLockPath -Force -ErrorAction SilentlyContinue
-}
-
-$serviceLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
-
-if ($serviceLock -and -not (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid)) {
-  Remove-Item -LiteralPath $context.ServiceLockPath -Force -ErrorAction SilentlyContinue
-}
-
-$runScriptArguments = @(
-  '-NoProfile',
-  '-ExecutionPolicy',
-  'Bypass',
-  '-WindowStyle',
-  'Hidden',
-  '-File',
-  $context.RunScriptPath
-)
-
-if ($Silent) {
-  $runScriptArguments += '-Silent'
-}
-
-$process = Start-Process `
-  -FilePath $context.PowerShellPath `
-  -ArgumentList $runScriptArguments `
-  -WorkingDirectory $context.ProjectRoot `
-  -WindowStyle Hidden `
-  -PassThru
-
-Write-CodexNotiaJsonFile -Path $context.WrapperLockPath -Value @{
-  pid = $process.Id
-  startedAt = (Get-Date).ToString('o')
-}
-
-Write-CodexNotiaConsoleMessage ('Started wrapper, PID: {0}' -f $process.Id)

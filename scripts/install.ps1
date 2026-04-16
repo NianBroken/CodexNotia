@@ -7,59 +7,27 @@ Set-CodexNotiaConsoleEncoding
 
 <#
 安装主流程。
-读取已经归一化后的最终配置，重建同名计划任务，并立即以隐藏方式拉起后台链路。
-如果旧任务已存在，会先注销再重新注册。
+会先停掉现有后台服务，再按当前配置重建计划任务，最后重新启动后台服务。
+整个流程每一步都以最终状态验证为准，避免只执行动作不确认结果。
 #>
-$context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
+$context = $null
 
-$principal = New-ScheduledTaskPrincipal `
-  -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) `
-  -LogonType Interactive `
-  -RunLevel Limited
-
-$action = New-ScheduledTaskAction `
-  -Execute $context.WscriptPath `
-  -Argument "//B //Nologo `"$($context.HiddenLauncherPath)`" `"$($context.PowerShellPath)`" `"$($context.LaunchScriptPath)`" `"-Silent`""
-
-$trigger = New-ScheduledTaskTrigger -AtLogOn
-
-$settings = New-ScheduledTaskSettingsSet `
-  -AllowStartIfOnBatteries `
-  -DontStopIfGoingOnBatteries `
-  -StartWhenAvailable `
-  -MultipleInstances IgnoreNew
-
-if (Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue) {
-  Unregister-ScheduledTask -TaskName $context.TaskName -Confirm:$false
-}
-
-Register-ScheduledTask `
-  -TaskName $context.TaskName `
-  -Action $action `
-  -Trigger $trigger `
-  -Principal $principal `
-  -Settings $settings `
-  -Description (Get-CodexNotiaText 'task.description') `
-  | Out-Null
-
-Start-CodexNotiaHiddenScript `
-  -LauncherPath $context.HiddenLauncherPath `
-  -PowerShellPath $context.PowerShellPath `
-  -ScriptPath $context.LaunchScriptPath `
-  -AdditionalArguments @('-Silent')
-
-$maxWaitSeconds = [Math]::Max(10, [int]$context.Config.startup.restartIntervalSeconds * 3)
-$deadline = (Get-Date).AddSeconds($maxWaitSeconds)
-
-while ((Get-Date) -lt $deadline) {
-  $startedLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
-
-  if ($startedLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $startedLock.pid)) {
-    Write-Output (Get-CodexNotiaText 'install.completed' @($context.TaskName))
-    exit 0
+try {
+  $context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
+  Stop-CodexNotiaManagedService -Context $context
+  Ensure-CodexNotiaScheduledTaskRegistered -Context $context
+  Start-CodexNotiaManagedService -Context $context | Out-Null
+  Write-Output (Get-CodexNotiaText 'install.completed' @($context.TaskName))
+  exit 0
+} catch {
+  if ($context) {
+    Write-CodexNotiaControlLog -Context $context -Level 'ERROR' -Message (
+      Get-CodexNotiaText 'control.log.failure' @(Get-CodexNotiaText 'operation.install')
+    ) -Metadata @{
+      error = $_.Exception.Message
+    }
   }
 
-  Start-Sleep -Milliseconds 500
+  Write-Output (Get-CodexNotiaText 'install.failed' @($_.Exception.Message))
+  exit 1
 }
-
-throw (Get-CodexNotiaText 'start.failed' @($context.TaskName))

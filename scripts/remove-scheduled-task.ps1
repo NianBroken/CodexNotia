@@ -7,28 +7,24 @@ Set-CodexNotiaConsoleEncoding
 
 <#
 只删除计划任务本身。
-不会停止服务、不会清理状态和日志，也不会修改其他配置。
+不会停止后台服务，也不会清理状态目录和日志目录。
 #>
+$context = $null
+
 try {
   $context = Get-CodexNotiaServiceContext -ScriptRoot $PSScriptRoot
-  $task = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
-
-  if (-not $task) {
-    Write-Output (Get-CodexNotiaText 'removeTask.taskMissing' @($context.TaskName))
-    exit 0
-  }
-
-  Unregister-ScheduledTask -TaskName $context.TaskName -Confirm:$false -ErrorAction Stop
-  $updatedTask = Get-ScheduledTask -TaskName $context.TaskName -ErrorAction SilentlyContinue
-
-  if (-not $updatedTask) {
-    Write-Output (Get-CodexNotiaText 'removeTask.completed' @($context.TaskName))
-    exit 0
-  }
-
-  Write-Output (Get-CodexNotiaText 'removeTask.failedStillExists' @($context.TaskName))
-  exit 1
+  Ensure-CodexNotiaScheduledTaskRemoved -Context $context
+  Write-Output (Get-CodexNotiaText 'removeTask.completed' @($context.TaskName))
+  exit 0
 } catch {
+  if ($context) {
+    Write-CodexNotiaControlLog -Context $context -Level 'ERROR' -Message (
+      Get-CodexNotiaText 'control.log.failure' @(Get-CodexNotiaText 'operation.removeTask')
+    ) -Metadata @{
+      error = $_.Exception.Message
+    }
+  }
+
   Write-Output (Get-CodexNotiaText 'removeTask.failed' @($_.Exception.Message))
   exit 1
 }

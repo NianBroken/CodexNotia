@@ -31,6 +31,20 @@ $script:CodexNotiaMessages = @{
   'common.configReadFailedError' = '\u8bfb\u53d6\u6700\u7ec8\u914d\u7f6e\u5931\u8d25\uff0c\u9000\u51fa\u7801: {0}\uff0c\u9519\u8bef: {1}'
   'common.hiddenLauncherMissing' = '\u9690\u85cf\u542f\u52a8\u8f85\u52a9\u811a\u672c\u4e0d\u5b58\u5728: {0}'
   'common.targetScriptMissing' = '\u76ee\u6807 PowerShell \u811a\u672c\u4e0d\u5b58\u5728: {0}'
+  'control.log.attempt' = '\u5f00\u59cb\u6267\u884c\u63a7\u5236\u64cd\u4f5c: {0}'
+  'control.log.retry' = '\u63a7\u5236\u64cd\u4f5c\u9a8c\u8bc1\u672a\u901a\u8fc7\uff0c\u51c6\u5907\u91cd\u8bd5: {0}'
+  'control.log.success' = '\u63a7\u5236\u64cd\u4f5c\u5df2\u5b8c\u6210: {0}'
+  'control.log.failure' = '\u63a7\u5236\u64cd\u4f5c\u5931\u8d25: {0}'
+  'operation.stopService' = '\u505c\u6b62\u540e\u53f0\u670d\u52a1'
+  'operation.startService' = '\u542f\u52a8\u540e\u53f0\u670d\u52a1'
+  'operation.startWrapper' = '\u542f\u52a8\u540e\u53f0\u5305\u88c5\u8fdb\u7a0b'
+  'operation.install' = '\u5b89\u88c5\u540e\u53f0\u670d\u52a1'
+  'operation.uninstall' = '\u5378\u8f7d\u540e\u53f0\u670d\u52a1'
+  'operation.registerTask' = '\u6ce8\u518c\u8ba1\u5212\u4efb\u52a1'
+  'operation.enableAutostart' = '\u542f\u7528\u540e\u7eed\u5f00\u673a\u81ea\u542f'
+  'operation.disableAutostart' = '\u7981\u7528\u540e\u7eed\u5f00\u673a\u81ea\u542f'
+  'operation.removeTask' = '\u5220\u9664\u8ba1\u5212\u4efb\u52a1'
+  'operation.cleanupRuntime' = '\u6e05\u7406\u8fd0\u884c\u72b6\u6001\u76ee\u5f55'
   'task.description' = '\u6301\u7eed\u76d1\u542c Codex \u4f1a\u8bdd\u5e76\u63a8\u9001\u56de\u7b54\u5b8c\u6210\u6216\u5f02\u5e38\u901a\u77e5'
   'disableAutostart.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728\uff0c\u65e0\u9700\u7981\u7528\u5f00\u673a\u81ea\u542f: {0}'
   'disableAutostart.alreadyDisabled' = '\u4efb\u52a1\u8ba1\u5212\u5df2\u7ecf\u5904\u4e8e\u7981\u7528\u72b6\u6001: {0}'
@@ -45,6 +59,13 @@ $script:CodexNotiaMessages = @{
   'enableAutostart.failedStillDisabled' = '\u542f\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25\uff0c\u4efb\u52a1\u4ecd\u5904\u4e8e\u7981\u7528\u72b6\u6001: {0}'
   'enableAutostart.failed' = '\u542f\u7528\u5f00\u673a\u81ea\u542f\u5931\u8d25: {0}'
   'install.completed' = '\u5df2\u5b89\u88c5\u8ba1\u5212\u4efb\u52a1\u5e76\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}'
+  'install.failed' = '\u5b89\u88c5\u8ba1\u5212\u4efb\u52a1\u6216\u542f\u52a8\u540e\u53f0\u670d\u52a1\u5931\u8d25: {0}'
+  'launch.wrapperRunning' = '\u540e\u53f0\u5305\u88c5\u8fdb\u7a0b\u5df2\u7ecf\u5728\u8fd0\u884c\uff0cPID: {0}'
+  'launch.wrapperStarted' = '\u5df2\u542f\u52a8\u540e\u53f0\u5305\u88c5\u8fdb\u7a0b\uff0cPID: {0}'
+  'launch.failed' = '\u540e\u53f0\u5305\u88c5\u8fdb\u7a0b\u672a\u6210\u529f\u8fdb\u5165\u8fd0\u884c\u72b6\u6001: {0}'
+  'detail.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728'
+  'detail.taskStillExistsBeforeRegister' = '\u65e7\u4efb\u52a1\u4ecd\u7136\u5b58\u5728\uff0c\u65e0\u6cd5\u5b8c\u6210\u91cd\u5efa'
+  'detail.wrapperVerificationFailed' = '\u5305\u88c5\u8fdb\u7a0b\u9a8c\u8bc1\u5931\u8d25'
   'removeTask.taskMissing' = '\u4efb\u52a1\u8ba1\u5212\u4e0d\u5b58\u5728\uff0c\u65e0\u9700\u5220\u9664: {0}'
   'removeTask.completed' = '\u5df2\u5220\u9664\u9879\u76ee\u5bf9\u5e94\u7684\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f: {0}'
   'removeTask.failedStillExists' = '\u5220\u9664\u4efb\u52a1\u8ba1\u5212\u7a0b\u5e8f\u5931\u8d25\uff0c\u4efb\u52a1\u4ecd\u7136\u5b58\u5728: {0}'
@@ -56,8 +77,9 @@ $script:CodexNotiaMessages = @{
   'start.completed' = '\u5df2\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}, PID: {1}'
   'start.failed' = '\u540e\u53f0\u670d\u52a1\u672a\u6210\u529f\u8fdb\u5165\u8fd0\u884c\u72b6\u6001: {0}'
   'stop.failedStillRunning' = '\u505c\u6b62\u540e\u53f0\u670d\u52a1\u5931\u8d25\uff0c\u4ecd\u6709\u6b8b\u7559\u8fdb\u7a0b: {0}'
-  'stop.completed' = '\u5df2\u505c\u6b62\u8ba1\u5212\u4efb\u52a1\u548c\u540e\u53f0\u670d\u52a1: {0}'
+  'stop.completed' = '\u5df2\u505c\u6b62\u540e\u53f0\u670d\u52a1: {0}'
   'uninstall.completed' = '\u5df2\u5378\u8f7d\u8ba1\u5212\u4efb\u52a1\u5e76\u6e05\u7406\u8fd0\u884c\u72b6\u6001: {0}'
+  'uninstall.failed' = '\u5378\u8f7d\u8ba1\u5212\u4efb\u52a1\u6216\u6e05\u7406\u8fd0\u884c\u72b6\u6001\u5931\u8d25: {0}'
 }
 
 function Convert-CodexNotiaEscapedUnicodeText {
@@ -292,6 +314,7 @@ function Get-CodexNotiaServiceContext {
     TaskName = $config.service.name
     StateDir = $config.runtime.stateDir
     LogDir = $config.runtime.logDir
+    ControlLogPath = Join-Path $config.runtime.logDir 'control.log'
     ServiceLockPath = Join-Path $config.runtime.stateDir 'service.lock.json'
     WrapperLockPath = Join-Path $config.runtime.stateDir 'wrapper.lock.json'
     HealthPath = Join-Path $config.runtime.stateDir 'health.json'
@@ -361,9 +384,30 @@ function Get-CodexNotiaManagedProcessIds {
     [string]$ProjectRoot
   )
 
+  return @(
+    ((Get-CodexNotiaManagedProcesses -ProjectRoot $ProjectRoot).ProcessId | Select-Object -Unique | Sort-Object)
+  )
+}
+
+<#
+按实际命令行识别受项目管理的启动器、包装进程和服务进程。
+这里只匹配真正执行 `launch-background.ps1`、`run-service.ps1` 和
+`node src/main.mjs service run` 的进程，避免把只是提到这些路径的其他
+PowerShell 命令误判成后台服务。
+#>
+function Get-CodexNotiaManagedProcesses {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$ProjectRoot
+  )
+
   $serviceEntryPath = Join-Path $ProjectRoot 'src\main.mjs'
   $wrapperScriptPath = Join-Path $ProjectRoot 'scripts\run-service.ps1'
-  $managedProcessIds = @()
+  $launchScriptPath = Join-Path $ProjectRoot 'scripts\launch-background.ps1'
+  $servicePattern = [regex]::Escape($serviceEntryPath)
+  $wrapperPattern = [regex]::Escape($wrapperScriptPath)
+  $launchPattern = [regex]::Escape($launchScriptPath)
+  $managedProcesses = @()
 
   foreach ($processInfo in Get-CimInstance Win32_Process -ErrorAction SilentlyContinue) {
     $commandLine = [string]$processInfo.CommandLine
@@ -372,12 +416,43 @@ function Get-CodexNotiaManagedProcessIds {
       continue
     }
 
-    if ($commandLine.Contains($serviceEntryPath) -or $commandLine.Contains($wrapperScriptPath)) {
-      $managedProcessIds += [int]$processInfo.ProcessId
+    $processName = [string]$processInfo.Name
+    $processType = $null
+
+    if ($processName -match '^node(\.exe)?$' -and $commandLine -match $servicePattern -and $commandLine -match '\sservice\s+run(\s|$)') {
+      $processType = 'service'
+    } elseif ($processName -match '^(powershell|pwsh)(\.exe)?$' -and $commandLine -match ('-File\s+"?{0}"?(\s|$)' -f $wrapperPattern)) {
+      $processType = 'wrapper'
+    } elseif ($processName -match '^(powershell|pwsh)(\.exe)?$' -and $commandLine -match ('-File\s+"?{0}"?(\s|$)' -f $launchPattern)) {
+      $processType = 'launcher'
+    }
+
+    if (-not $processType) {
+      continue
+    }
+
+    $managedProcesses += [pscustomobject]@{
+      ProcessId = [int]$processInfo.ProcessId
+      Name = $processName
+      Type = $processType
+      CommandLine = $commandLine
     }
   }
 
-  return @($managedProcessIds | Select-Object -Unique | Sort-Object)
+  return @(
+    ($managedProcesses | Sort-Object @{
+        Expression = {
+          switch ($_.Type) {
+            'launcher' { 0 }
+            'wrapper' { 1 }
+            'service' { 2 }
+            default { 3 }
+          }
+        }
+      }, @{
+        Expression = { $_.ProcessId }
+      })
+  )
 }
 
 <#
@@ -468,4 +543,872 @@ function Format-CodexNotiaDateTimeValue {
   }
 
   return $dateTimeValue.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')
+}
+
+<#
+按当前配置生成控制脚本统一使用的验证和重试策略。
+尝试次数直接复用 `startup.restartCount`，再额外包含第一次执行本身。
+等待节奏优先跟随 `startup.restartIntervalSeconds`，未配置时退回轮询间隔。
+#>
+function Get-CodexNotiaControlPolicy {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $attemptCount = [Math]::Max(1, [int]$Context.Config.startup.restartCount + 1)
+  $pollIntervalMs = [Math]::Max(1, [int]$Context.Config.service.pollIntervalMs)
+  $retryDelayMs = [int]$Context.Config.startup.restartIntervalSeconds * 1000
+
+  if ($retryDelayMs -le 0) {
+    $retryDelayMs = $pollIntervalMs
+  }
+
+  if ($retryDelayMs -lt $pollIntervalMs) {
+    $retryDelayMs = $pollIntervalMs
+  }
+
+  return [pscustomobject]@{
+    AttemptCount = $attemptCount
+    PollIntervalMs = $pollIntervalMs
+    RetryDelayMs = $retryDelayMs
+    VerifyTimeoutMs = $retryDelayMs
+  }
+}
+
+<#
+把控制脚本的重要动作写入独立日志。
+日志单独落到 `runtime.logDir\control.log`，便于追踪安装、启动、停止、
+启用自启、卸载等操作的真实执行过程。
+#>
+function Write-CodexNotiaControlLog {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context,
+    [Parameter(Mandatory = $true)]
+    [string]$Level,
+    [Parameter(Mandatory = $true)]
+    [string]$Message,
+    $Metadata = $null
+  )
+
+  try {
+    New-Item -ItemType Directory -Force -Path $Context.LogDir | Out-Null
+    $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    $metadataText = ''
+
+    if ($null -ne $Metadata) {
+      try {
+        $metadataText = ' ' + ($Metadata | ConvertTo-Json -Compress -Depth 8)
+      } catch {
+        $metadataText = ' {"metadataError":"serialization failed"}'
+      }
+    }
+
+    $utf8Encoding = New-Object System.Text.UTF8Encoding($false)
+    $line = '[{0}] [{1}] {2}{3}{4}' -f $timestamp, $Level.ToUpperInvariant(), $Message, $metadataText, [Environment]::NewLine
+    [System.IO.File]::AppendAllText($Context.ControlLogPath, $line, $utf8Encoding)
+  } catch {
+  }
+}
+
+<#
+按指定超时轮询验证条件是否成立。
+超时后会再做最后一次检查，确保边界时刻的状态变化不会被漏掉。
+#>
+function Wait-CodexNotiaCondition {
+  param(
+    [Parameter(Mandatory = $true)]
+    [scriptblock]$Condition,
+    [Parameter(Mandatory = $true)]
+    [int]$TimeoutMs,
+    [Parameter(Mandatory = $true)]
+    [int]$PollIntervalMs
+  )
+
+  if (& $Condition) {
+    return $true
+  }
+
+  $deadline = (Get-Date).AddMilliseconds([Math]::Max($TimeoutMs, 0))
+
+  while ((Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds $PollIntervalMs
+
+    if (& $Condition) {
+      return $true
+    }
+  }
+
+  return [bool](& $Condition)
+}
+
+<#
+清理已经失效的锁文件。
+锁文件存在但对应进程已经消失时会直接删除，避免旧锁影响状态判断。
+#>
+function Clear-CodexNotiaStaleLockFiles {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $serviceLock = Read-CodexNotiaLockFile -Path $Context.ServiceLockPath
+  $wrapperLock = Read-CodexNotiaLockFile -Path $Context.WrapperLockPath
+
+  if (-not ($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid))) {
+    Remove-Item -LiteralPath $Context.ServiceLockPath -Force -ErrorAction SilentlyContinue
+  }
+
+  if (-not ($wrapperLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $wrapperLock.pid))) {
+    Remove-Item -LiteralPath $Context.WrapperLockPath -Force -ErrorAction SilentlyContinue
+  }
+}
+
+<#
+汇总后台链路当前的真实运行状态。
+这里同时参考锁文件和真实进程，避免只看单一来源导致误判。
+#>
+function Get-CodexNotiaServiceStateSnapshot {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  Clear-CodexNotiaStaleLockFiles -Context $Context
+
+  $serviceLock = Read-CodexNotiaLockFile -Path $Context.ServiceLockPath
+  $wrapperLock = Read-CodexNotiaLockFile -Path $Context.WrapperLockPath
+  $managedProcesses = @(Get-CodexNotiaManagedProcesses -ProjectRoot $Context.ProjectRoot)
+  $serviceProcess = $managedProcesses | Where-Object { $_.Type -eq 'service' } | Select-Object -First 1
+  $wrapperProcess = $managedProcesses | Where-Object { $_.Type -eq 'wrapper' } | Select-Object -First 1
+  $launcherProcesses = @($managedProcesses | Where-Object { $_.Type -eq 'launcher' })
+  $servicePid = 0
+  $wrapperPid = 0
+
+  if ($serviceProcess) {
+    $servicePid = [int]$serviceProcess.ProcessId
+  } elseif ($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid)) {
+    $servicePid = [int]$serviceLock.pid
+  }
+
+  if ($wrapperProcess) {
+    $wrapperPid = [int]$wrapperProcess.ProcessId
+  } elseif ($wrapperLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $wrapperLock.pid)) {
+    $wrapperPid = [int]$wrapperLock.pid
+  }
+
+  return [pscustomobject]@{
+    ServiceLock = $serviceLock
+    WrapperLock = $wrapperLock
+    ServicePid = $servicePid
+    WrapperPid = $wrapperPid
+    LauncherPids = @($launcherProcesses | Select-Object -ExpandProperty ProcessId)
+    ManagedProcessIds = @(
+      @($managedProcesses | Select-Object -ExpandProperty ProcessId)
+      if ($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid)) {
+        $serviceLock.pid
+      }
+      if ($wrapperLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $wrapperLock.pid)) {
+        $wrapperLock.pid
+      }
+    ) | Where-Object { $_ -gt 0 } | Select-Object -Unique | Sort-Object
+    ServiceRunning = ($servicePid -gt 0)
+    WrapperRunning = ($wrapperPid -gt 0)
+  }
+}
+
+function Test-CodexNotiaManagedServiceStopped {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $snapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+
+  return [bool](
+    @($snapshot.ManagedProcessIds).Count -eq 0 -and
+    -not (Test-Path -LiteralPath $Context.ServiceLockPath) -and
+    -not (Test-Path -LiteralPath $Context.WrapperLockPath)
+  )
+}
+
+function Test-CodexNotiaManagedServiceRunning {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $snapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+  return [bool]($snapshot.ServiceRunning -and $snapshot.WrapperRunning)
+}
+
+<#
+生成停止后台链路时的进程顺序。
+先停启动器，再停包装进程，最后停服务进程，避免包装进程在服务退出前又把它重新拉起。
+#>
+function Get-CodexNotiaStopProcessIds {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $snapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+  $processEntries = @()
+
+  $processEntries += @(
+    foreach ($launcherPid in $snapshot.LauncherPids) {
+      [pscustomobject]@{ ProcessId = [int]$launcherPid; Order = 0 }
+    }
+  )
+
+  if ($snapshot.WrapperPid -gt 0) {
+    $processEntries += [pscustomobject]@{ ProcessId = [int]$snapshot.WrapperPid; Order = 1 }
+  }
+
+  if ($snapshot.ServicePid -gt 0) {
+    $processEntries += [pscustomobject]@{ ProcessId = [int]$snapshot.ServicePid; Order = 2 }
+  }
+
+  foreach ($managedPid in $snapshot.ManagedProcessIds) {
+    $processEntries += [pscustomobject]@{ ProcessId = [int]$managedPid; Order = 3 }
+  }
+
+  return @(
+    ($processEntries | Sort-Object Order, ProcessId | Select-Object -ExpandProperty ProcessId -Unique)
+  )
+}
+
+<#
+停止后台链路内所有受控进程，并在每次尝试后重新验证是否真的完全停止。
+这里只处理服务、包装进程和隐藏启动器，不会对计划任务本身做任何操作。
+#>
+function Stop-CodexNotiaManagedService {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.stopService'
+
+  if (Test-CodexNotiaManagedServiceStopped -Context $Context) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.success' @($operationName)
+    ) -Metadata @{ alreadyStopped = $true }
+    return
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    $processIdsToStop = @(Get-CodexNotiaStopProcessIds -Context $Context)
+
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      processIds = $processIdsToStop
+    }
+
+    foreach ($processIdValue in $processIdsToStop) {
+      if (Test-CodexNotiaLiveProcess -ProcessIdValue $processIdValue) {
+        Stop-Process -Id $processIdValue -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaManagedServiceStopped -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+      }
+      return
+    }
+
+    $remainingSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        remainingProcessIds = $remainingSnapshot.ManagedProcessIds
+      }
+    } else {
+      Write-CodexNotiaControlLog -Context $Context -Level 'ERROR' -Message (
+        Get-CodexNotiaText 'control.log.failure' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        remainingProcessIds = $remainingSnapshot.ManagedProcessIds
+      }
+    }
+  }
+
+  $finalSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+  throw ([string]::Join(', ', @($finalSnapshot.ManagedProcessIds)))
+}
+
+<#
+启动后台服务，并在每次尝试后验证包装进程和服务进程是否都已经进入运行状态。
+如果发现残留的半启动状态，会先清理再重新拉起，保证最终状态一致。
+#>
+function Start-CodexNotiaManagedService {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.startService'
+
+  if (Test-CodexNotiaManagedServiceRunning -Context $Context) {
+    $runningSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.success' @($operationName)
+    ) -Metadata @{
+      alreadyRunning = $true
+      servicePid = $runningSnapshot.ServicePid
+      wrapperPid = $runningSnapshot.WrapperPid
+    }
+    return $runningSnapshot
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    $snapshotBeforeStart = Get-CodexNotiaServiceStateSnapshot -Context $Context
+
+    if (@($snapshotBeforeStart.ManagedProcessIds).Count -gt 0 -or (Test-Path -LiteralPath $Context.ServiceLockPath) -or (Test-Path -LiteralPath $Context.WrapperLockPath)) {
+      Stop-CodexNotiaManagedService -Context $Context
+    }
+
+    Clear-CodexNotiaStaleLockFiles -Context $Context
+
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      hiddenLauncher = $Context.HiddenLauncherPath
+    }
+
+    Start-CodexNotiaHiddenScript `
+      -LauncherPath $Context.HiddenLauncherPath `
+      -PowerShellPath $Context.PowerShellPath `
+      -ScriptPath $Context.LaunchScriptPath `
+      -AdditionalArguments @('-Silent')
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaManagedServiceRunning -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      $startedSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        servicePid = $startedSnapshot.ServicePid
+        wrapperPid = $startedSnapshot.WrapperPid
+      }
+      return $startedSnapshot
+    }
+
+    $failedSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        servicePid = $failedSnapshot.ServicePid
+        wrapperPid = $failedSnapshot.WrapperPid
+        launcherPids = $failedSnapshot.LauncherPids
+      }
+    } else {
+      Write-CodexNotiaControlLog -Context $Context -Level 'ERROR' -Message (
+        Get-CodexNotiaText 'control.log.failure' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        servicePid = $failedSnapshot.ServicePid
+        wrapperPid = $failedSnapshot.WrapperPid
+        launcherPids = $failedSnapshot.LauncherPids
+      }
+    }
+  }
+
+  $finalSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+  throw (
+    'wrapperPid={0}, servicePid={1}, launcherPids={2}' -f
+    $finalSnapshot.WrapperPid,
+    $finalSnapshot.ServicePid,
+    ([string]::Join(', ', @($finalSnapshot.LauncherPids)))
+  )
+}
+
+<#
+由 `launch-background.ps1` 负责拉起 `run-service.ps1` 时复用的包装进程启动逻辑。
+这里只验证包装进程自己是否成功进入运行状态，服务进程的拉起和重启交给包装进程内部负责。
+#>
+function Start-CodexNotiaWrapperProcess {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context,
+    [switch]$Silent
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.startWrapper'
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    $snapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+
+    if ($snapshot.WrapperRunning) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        alreadyRunning = $true
+        wrapperPid = $snapshot.WrapperPid
+      }
+      return $snapshot
+    }
+
+    Remove-Item -LiteralPath $Context.WrapperLockPath -Force -ErrorAction SilentlyContinue
+
+    $runScriptArguments = @(
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-WindowStyle',
+      'Hidden',
+      '-File',
+      $Context.RunScriptPath
+    )
+
+    if ($Silent) {
+      $runScriptArguments += '-Silent'
+    }
+
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+    }
+
+    $process = Start-Process `
+      -FilePath $Context.PowerShellPath `
+      -ArgumentList $runScriptArguments `
+      -WorkingDirectory $Context.ProjectRoot `
+      -WindowStyle Hidden `
+      -PassThru
+
+    if (Wait-CodexNotiaCondition -Condition {
+      $wrapperSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+      return [bool]($wrapperSnapshot.WrapperRunning -and $wrapperSnapshot.WrapperPid -eq $process.Id)
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      $startedSnapshot = Get-CodexNotiaServiceStateSnapshot -Context $Context
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        wrapperPid = $startedSnapshot.WrapperPid
+      }
+      return $startedSnapshot
+    }
+
+    if (Test-CodexNotiaLiveProcess -ProcessIdValue $process.Id) {
+      Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        wrapperPid = $process.Id
+      }
+    } else {
+      Write-CodexNotiaControlLog -Context $Context -Level 'ERROR' -Message (
+        Get-CodexNotiaText 'control.log.failure' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        wrapperPid = $process.Id
+      }
+    }
+  }
+
+  throw (Get-CodexNotiaText 'detail.wrapperVerificationFailed')
+}
+
+function Get-CodexNotiaScheduledTask {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  return Get-ScheduledTask -TaskName $Context.TaskName -ErrorAction SilentlyContinue
+}
+
+function Test-CodexNotiaScheduledTaskEnabled {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $task = Get-CodexNotiaScheduledTask -Context $Context
+  return [bool]($task -and $task.Settings.Enabled)
+}
+
+function Test-CodexNotiaScheduledTaskDisabled {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $task = Get-CodexNotiaScheduledTask -Context $Context
+  return [bool]($null -eq $task -or -not [bool]$task.Settings.Enabled)
+}
+
+function Test-CodexNotiaScheduledTaskRemoved {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  return [bool]($null -eq (Get-CodexNotiaScheduledTask -Context $Context))
+}
+
+<#
+把计划任务重建为项目当前配置对应的定义，并在每次执行后验证任务是否真的存在且已启用。
+#>
+function Ensure-CodexNotiaScheduledTaskRegistered {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.registerTask'
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      taskName = $Context.TaskName
+    }
+
+    $existingTask = Get-CodexNotiaScheduledTask -Context $Context
+
+    if ($existingTask) {
+      Stop-ScheduledTask -TaskName $Context.TaskName -ErrorAction SilentlyContinue
+      Unregister-ScheduledTask -TaskName $Context.TaskName -Confirm:$false -ErrorAction SilentlyContinue
+
+      if (-not (Wait-CodexNotiaCondition -Condition {
+        Test-CodexNotiaScheduledTaskRemoved -Context $Context
+      } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs)) {
+        if ($attempt -lt $policy.AttemptCount) {
+          Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+            Get-CodexNotiaText 'control.log.retry' @($operationName)
+          ) -Metadata @{
+            attempt = $attempt
+            maxAttempts = $policy.AttemptCount
+            reason = Get-CodexNotiaText 'detail.taskStillExistsBeforeRegister'
+          }
+          continue
+        }
+
+        throw (Get-CodexNotiaText 'detail.taskStillExistsBeforeRegister')
+      }
+    }
+
+    $principal = New-ScheduledTaskPrincipal `
+      -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) `
+      -LogonType Interactive `
+      -RunLevel Limited
+
+    $action = New-ScheduledTaskAction `
+      -Execute $Context.WscriptPath `
+      -Argument "//B //Nologo `"$($Context.HiddenLauncherPath)`" `"$($Context.PowerShellPath)`" `"$($Context.LaunchScriptPath)`" `"-Silent`""
+
+    $trigger = New-ScheduledTaskTrigger -AtLogOn
+
+    $settings = New-ScheduledTaskSettingsSet `
+      -AllowStartIfOnBatteries `
+      -DontStopIfGoingOnBatteries `
+      -StartWhenAvailable `
+      -MultipleInstances IgnoreNew
+
+    Register-ScheduledTask `
+      -TaskName $Context.TaskName `
+      -Action $action `
+      -Trigger $trigger `
+      -Principal $principal `
+      -Settings $settings `
+      -Description (Get-CodexNotiaText 'task.description') `
+      | Out-Null
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaScheduledTaskEnabled -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        taskName = $Context.TaskName
+      }
+      return
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        taskName = $Context.TaskName
+      }
+    } else {
+      Write-CodexNotiaControlLog -Context $Context -Level 'ERROR' -Message (
+        Get-CodexNotiaText 'control.log.failure' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        taskName = $Context.TaskName
+      }
+    }
+  }
+
+  throw $Context.TaskName
+}
+
+function Ensure-CodexNotiaScheduledTaskEnabled {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.enableAutostart'
+
+  if (-not (Get-CodexNotiaScheduledTask -Context $Context)) {
+    throw (Get-CodexNotiaText 'detail.taskMissing')
+  }
+
+  if (Test-CodexNotiaScheduledTaskEnabled -Context $Context) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.success' @($operationName)
+    ) -Metadata @{
+      alreadyEnabled = $true
+      taskName = $Context.TaskName
+    }
+    return
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      taskName = $Context.TaskName
+    }
+
+    Enable-ScheduledTask -TaskName $Context.TaskName -ErrorAction Stop | Out-Null
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaScheduledTaskEnabled -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        taskName = $Context.TaskName
+      }
+      return
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        taskName = $Context.TaskName
+      }
+    }
+  }
+
+  throw $Context.TaskName
+}
+
+function Ensure-CodexNotiaScheduledTaskDisabled {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.disableAutostart'
+
+  if (Test-CodexNotiaScheduledTaskDisabled -Context $Context) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.success' @($operationName)
+    ) -Metadata @{
+      taskName = $Context.TaskName
+    }
+    return
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      taskName = $Context.TaskName
+    }
+
+    Disable-ScheduledTask -TaskName $Context.TaskName -ErrorAction Stop | Out-Null
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaScheduledTaskDisabled -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        taskName = $Context.TaskName
+      }
+      return
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        taskName = $Context.TaskName
+      }
+    }
+  }
+
+  throw $Context.TaskName
+}
+
+function Ensure-CodexNotiaScheduledTaskRemoved {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.removeTask'
+
+  if (Test-CodexNotiaScheduledTaskRemoved -Context $Context) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.success' @($operationName)
+    ) -Metadata @{
+      alreadyRemoved = $true
+      taskName = $Context.TaskName
+    }
+    return
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      taskName = $Context.TaskName
+    }
+
+    Stop-ScheduledTask -TaskName $Context.TaskName -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName $Context.TaskName -Confirm:$false -ErrorAction SilentlyContinue
+
+    if (Wait-CodexNotiaCondition -Condition {
+      Test-CodexNotiaScheduledTaskRemoved -Context $Context
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+        Get-CodexNotiaText 'control.log.success' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        taskName = $Context.TaskName
+      }
+      return
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        taskName = $Context.TaskName
+      }
+    }
+  }
+
+  throw $Context.TaskName
+}
+
+<#
+清理运行状态目录和日志目录，并在每次尝试后验证目标路径是否都已消失。
+卸载流程走到这里时服务已经停止，所以这里只负责文件系统层面的最终清理。
+#>
+function Remove-CodexNotiaRuntimeArtifacts {
+  param(
+    [Parameter(Mandatory = $true)]
+    $Context
+  )
+
+  $policy = Get-CodexNotiaControlPolicy -Context $Context
+  $operationName = Get-CodexNotiaText 'operation.cleanupRuntime'
+  $targetPaths = @($Context.StateDir, $Context.LogDir)
+
+  if (@($targetPaths | Where-Object { Test-Path -LiteralPath $_ }).Count -eq 0) {
+    return
+  }
+
+  for ($attempt = 1; $attempt -le $policy.AttemptCount; $attempt += 1) {
+    Write-CodexNotiaControlLog -Context $Context -Level 'INFO' -Message (
+      Get-CodexNotiaText 'control.log.attempt' @($operationName)
+    ) -Metadata @{
+      attempt = $attempt
+      maxAttempts = $policy.AttemptCount
+      targetPaths = $targetPaths
+    }
+
+    foreach ($targetPath in $targetPaths) {
+      if (Test-Path -LiteralPath $targetPath) {
+        Remove-Item -LiteralPath $targetPath -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    if (Wait-CodexNotiaCondition -Condition {
+      @($targetPaths | Where-Object { Test-Path -LiteralPath $_ }).Count -eq 0
+    } -TimeoutMs $policy.VerifyTimeoutMs -PollIntervalMs $policy.PollIntervalMs) {
+      return
+    }
+
+    if ($attempt -lt $policy.AttemptCount) {
+      Write-CodexNotiaControlLog -Context $Context -Level 'WARN' -Message (
+        Get-CodexNotiaText 'control.log.retry' @($operationName)
+      ) -Metadata @{
+        attempt = $attempt
+        maxAttempts = $policy.AttemptCount
+        remainingPaths = @($targetPaths | Where-Object { Test-Path -LiteralPath $_ })
+      }
+    }
+  }
+
+  throw ([string]::Join(', ', @($targetPaths | Where-Object { Test-Path -LiteralPath $_ })))
 }
