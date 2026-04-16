@@ -28,6 +28,13 @@ if ($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.p
   exit 0
 }
 
+$managedProcessIds = Get-CodexNotiaManagedProcessIds -ProjectRoot $context.ProjectRoot
+
+if (@($managedProcessIds).Count -gt 0) {
+  Write-Output (Get-CodexNotiaText 'start.alreadyRunning' @($managedProcessIds[0]))
+  exit 0
+}
+
 if (Test-Path -LiteralPath $context.ServiceLockPath) {
   Remove-Item -LiteralPath $context.ServiceLockPath -Force -ErrorAction SilentlyContinue
 }

@@ -55,6 +55,7 @@ $script:CodexNotiaMessages = @{
   'start.alreadyRunning' = '\u540e\u53f0\u670d\u52a1\u5df2\u7ecf\u5728\u8fd0\u884c\uff0cPID: {0}'
   'start.completed' = '\u5df2\u542f\u52a8\u540e\u53f0\u670d\u52a1: {0}, PID: {1}'
   'start.failed' = '\u540e\u53f0\u670d\u52a1\u672a\u6210\u529f\u8fdb\u5165\u8fd0\u884c\u72b6\u6001: {0}'
+  'stop.failedStillRunning' = '\u505c\u6b62\u540e\u53f0\u670d\u52a1\u5931\u8d25\uff0c\u4ecd\u6709\u6b8b\u7559\u8fdb\u7a0b: {0}'
   'stop.completed' = '\u5df2\u505c\u6b62\u8ba1\u5212\u4efb\u52a1\u548c\u540e\u53f0\u670d\u52a1: {0}'
   'uninstall.completed' = '\u5df2\u5378\u8f7d\u8ba1\u5212\u4efb\u52a1\u5e76\u6e05\u7406\u8fd0\u884c\u72b6\u6001: {0}'
 }
@@ -283,10 +284,6 @@ function Get-CodexNotiaServiceContext {
 
   $projectRoot = Split-Path -Parent $ScriptRoot
   $config = Get-CodexNotiaResolvedConfig -ScriptRoot $ScriptRoot
-  $healthFreshThresholdSeconds = [Math]::Max(
-    15,
-    [int][Math]::Ceiling(([double]$config.service.pollIntervalMs * 5) / 1000)
-  )
 
   return [pscustomobject]@{
     ProjectRoot = $projectRoot
@@ -303,7 +300,6 @@ function Get-CodexNotiaServiceContext {
     HiddenLauncherPath = Join-Path $projectRoot 'scripts\invoke-hidden-powershell.vbs'
     PowerShellPath = Get-CodexNotiaPowerShellPath
     WscriptPath = Get-CodexNotiaWscriptPath
-    HealthFreshThresholdSeconds = $healthFreshThresholdSeconds
   }
 }
 
@@ -353,6 +349,35 @@ function Test-CodexNotiaLiveProcess {
   )
 
   return [bool](Get-Process -Id $ProcessIdValue -ErrorAction SilentlyContinue)
+}
+
+<#
+按项目路径查找受管的包装进程和服务进程。
+这里不依赖锁文件，专门用来兜住锁丢失、残留进程和状态误报场景。
+#>
+function Get-CodexNotiaManagedProcessIds {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$ProjectRoot
+  )
+
+  $serviceEntryPath = Join-Path $ProjectRoot 'src\main.mjs'
+  $wrapperScriptPath = Join-Path $ProjectRoot 'scripts\run-service.ps1'
+  $managedProcessIds = @()
+
+  foreach ($processInfo in Get-CimInstance Win32_Process -ErrorAction SilentlyContinue) {
+    $commandLine = [string]$processInfo.CommandLine
+
+    if ([string]::IsNullOrWhiteSpace($commandLine)) {
+      continue
+    }
+
+    if ($commandLine.Contains($serviceEntryPath) -or $commandLine.Contains($wrapperScriptPath)) {
+      $managedProcessIds += [int]$processInfo.ProcessId
+    }
+  }
+
+  return @($managedProcessIds | Select-Object -Unique | Sort-Object)
 }
 
 <#

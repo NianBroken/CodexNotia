@@ -21,6 +21,9 @@ if ($task) {
 $healthRaw = Read-CodexNotiaOptionalJsonFile -Path $context.HealthPath
 $healthDisplay = $null
 $healthUpdatedAtUtc = $null
+$healthServiceStartedAtUtc = $null
+$healthUpdatedAtValue = $null
+$healthServiceStartedAtValue = $null
 
 if ($healthRaw) {
   $healthDisplay = [pscustomobject]@{}
@@ -29,10 +32,18 @@ if ($healthRaw) {
     Add-Member -InputObject $healthDisplay -MemberType NoteProperty -Name $property.Name -Value $property.Value
   }
 
-  $healthUpdatedAtUtc = Convert-CodexNotiaDateTimeValue -Value $healthRaw.updatedAt
+  $healthUpdatedAtValue = if ($healthRaw.PSObject.Properties['updatedAt']) { $healthRaw.updatedAt } else { $null }
+  $healthServiceStartedAtValue = if ($healthRaw.PSObject.Properties['serviceStartedAt']) { $healthRaw.serviceStartedAt } else { $null }
+  $healthUpdatedAtUtc = Convert-CodexNotiaDateTimeValue -Value $healthUpdatedAtValue
 
   if ($healthUpdatedAtUtc) {
     $healthDisplay.updatedAt = $healthUpdatedAtUtc.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')
+  }
+
+  $healthServiceStartedAtUtc = Convert-CodexNotiaDateTimeValue -Value $healthServiceStartedAtValue
+
+  if ($healthServiceStartedAtUtc) {
+    $healthDisplay.serviceStartedAt = $healthServiceStartedAtUtc.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')
   }
 }
 
@@ -40,11 +51,21 @@ $serviceLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
 $wrapperLock = Read-CodexNotiaLockFile -Path $context.WrapperLockPath
 $serviceProcessRunning = [bool]($serviceLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $serviceLock.pid))
 $wrapperProcessRunning = [bool]($wrapperLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $wrapperLock.pid))
-$healthFresh = $false
+$healthMatchesRunningService = $false
 
-if ($healthUpdatedAtUtc) {
-  $healthAgeSeconds = ((Get-Date).ToUniversalTime() - $healthUpdatedAtUtc).TotalSeconds
-  $healthFresh = $healthAgeSeconds -lt $context.HealthFreshThresholdSeconds
+if ($healthRaw -and $serviceProcessRunning) {
+  $healthPidValue = 0
+  $hasHealthPid = [int]::TryParse([string]$healthRaw.pid, [ref]$healthPidValue)
+  $healthStartedAt = [string]$healthServiceStartedAtValue
+  $serviceLockStartedAt = if ($serviceLock) { [string]$serviceLock.startedAt } else { '' }
+
+  if ($hasHealthPid -and $healthPidValue -eq $serviceLock.pid) {
+    if ([string]::IsNullOrWhiteSpace($healthStartedAt) -or [string]::IsNullOrWhiteSpace($serviceLockStartedAt)) {
+      $healthMatchesRunningService = $true
+    } else {
+      $healthMatchesRunningService = $healthStartedAt -eq $serviceLockStartedAt
+    }
+  }
 }
 
 [pscustomobject]@{
@@ -58,8 +79,9 @@ if ($healthUpdatedAtUtc) {
   WrapperProcessRunning = $wrapperProcessRunning
   ServicePid = if ($serviceLock) { $serviceLock.pid } else { $null }
   ServiceProcessRunning = $serviceProcessRunning
-  HealthFresh = $healthFresh
-  HealthFreshThresholdSeconds = $context.HealthFreshThresholdSeconds
+  HealthCurrent = $healthMatchesRunningService
+  HealthFresh = $healthMatchesRunningService
+  HealthFreshThresholdSeconds = $null
   ConfigPath = $context.ConfigPath
   StateDir = $context.StateDir
   LogDir = $context.LogDir

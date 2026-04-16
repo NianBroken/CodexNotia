@@ -48,4 +48,18 @@ Start-CodexNotiaHiddenScript `
   -ScriptPath $context.LaunchScriptPath `
   -AdditionalArguments @('-Silent')
 
-Write-Output (Get-CodexNotiaText 'install.completed' @($context.TaskName))
+$maxWaitSeconds = [Math]::Max(10, [int]$context.Config.startup.restartIntervalSeconds * 3)
+$deadline = (Get-Date).AddSeconds($maxWaitSeconds)
+
+while ((Get-Date) -lt $deadline) {
+  $startedLock = Read-CodexNotiaLockFile -Path $context.ServiceLockPath
+
+  if ($startedLock -and (Test-CodexNotiaLiveProcess -ProcessIdValue $startedLock.pid)) {
+    Write-Output (Get-CodexNotiaText 'install.completed' @($context.TaskName))
+    exit 0
+  }
+
+  Start-Sleep -Milliseconds 500
+}
+
+throw (Get-CodexNotiaText 'start.failed' @($context.TaskName))

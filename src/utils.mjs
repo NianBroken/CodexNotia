@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+const ISO_DATE_TIME_PATTERN = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/;
+
 export function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -100,7 +102,7 @@ export function limitLength(value, maxLength) {
  * 统一格式化为 `yyyy-MM-dd HH:mm:ss`。
  */
 export function formatLocalDateTime(input) {
-  const date = input instanceof Date ? input : new Date(input);
+  const date = toValidDate(input) ?? new Date(input);
   const year = date.getFullYear();
   const month = padNumber(date.getMonth() + 1);
   const day = padNumber(date.getDate());
@@ -136,6 +138,14 @@ export async function readJsonFile(filePath, fallbackValue) {
  */
 export async function writeJsonFile(filePath, value) {
   await atomicWriteFile(filePath, JSON.stringify(value, null, 2), 'utf8');
+}
+
+/**
+ * 生成用于比较内容是否真的变化的 JSON 快照。
+ * 这里不做格式化，只用于内存中的稳定比对。
+ */
+export function createJsonSnapshot(value) {
+  return JSON.stringify(value);
 }
 
 export async function fileExists(filePath) {
@@ -213,7 +223,54 @@ export function parseJsonLine(line) {
 }
 
 export function nowIsoString() {
-  return new Date().toISOString();
+  return formatIsoDateTimeWithOffset(new Date());
+}
+
+/**
+ * 统一格式化为带本地时区偏移的 ISO 8601 时间。
+ * 例如 `2026-04-16T19:54:06.123+08:00`。
+ */
+export function formatIsoDateTimeWithOffset(input) {
+  const date = toValidDate(input) ?? new Date();
+  const year = date.getFullYear();
+  const month = padNumber(date.getMonth() + 1);
+  const day = padNumber(date.getDate());
+  const hour = padNumber(date.getHours());
+  const minute = padNumber(date.getMinutes());
+  const second = padNumber(date.getSeconds());
+  const millisecond = String(date.getMilliseconds()).padStart(3, '0');
+  const totalOffsetMinutes = -date.getTimezoneOffset();
+  const offsetSign = totalOffsetMinutes >= 0 ? '+' : '-';
+  const absoluteOffsetMinutes = Math.abs(totalOffsetMinutes);
+  const offsetHours = padNumber(Math.floor(absoluteOffsetMinutes / 60));
+  const offsetMinutes = padNumber(absoluteOffsetMinutes % 60);
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${millisecond}${offsetSign}${offsetHours}:${offsetMinutes}`;
+}
+
+/**
+ * 把任意可解析时间统一转成本地时区偏移格式。
+ * 无法解析时返回回退值，避免把坏时间继续写回状态文件。
+ */
+export function normalizeTimestamp(value, fallbackValue = '') {
+  const date = toValidDate(value);
+
+  if (date) {
+    return formatIsoDateTimeWithOffset(date);
+  }
+
+  if (fallbackValue === '') {
+    return '';
+  }
+
+  return normalizeTimestamp(fallbackValue, '');
+}
+
+/**
+ * 判断文本是否像一个带时区信息的 ISO 8601 时间。
+ */
+export function looksLikeIsoDateTime(value) {
+  return typeof value === 'string'
+    && ISO_DATE_TIME_PATTERN.test(trimField(value));
 }
 
 /**
@@ -324,4 +381,28 @@ function stripJsonComments(text) {
   }
 
   return result;
+}
+
+function toValidDate(input) {
+  if (input instanceof Date) {
+    return Number.isNaN(input.getTime()) ? null : input;
+  }
+
+  if (typeof input === 'number') {
+    const date = new Date(input);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof input === 'string') {
+    const trimmedValue = trimField(input);
+
+    if (!trimmedValue) {
+      return null;
+    }
+
+    const date = new Date(trimmedValue);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  return null;
 }

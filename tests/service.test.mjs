@@ -6,6 +6,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CodexNotiaService } from '../src/service.mjs';
 
+const ISO_OFFSET_TIMESTAMP_PATTERN = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}[+-]\d\d:\d\d$/;
+
 /**
  * 后台服务状态机测试。
  * 通过临时会话目录和本地假 Bark 服务验证通知触发时机。
@@ -129,6 +131,79 @@ async function writeCodexAppLog(rootDir, name, lines) {
 function parseRequestBody(body) {
   return new URLSearchParams(body);
 }
+
+test('空闲轮询不会重复改写状态文件和健康文件', async () => {
+  const sessionsDir = await createTempDir();
+  const runtimeDir = await createTempDir();
+  const capture = await startCaptureServer();
+
+  try {
+    const config = buildConfig({ sessionsDir, runtimeDir, port: capture.port });
+    const service = new CodexNotiaService(config);
+    await service.stateStore.initialize();
+    service.ensureWrapperProcess = async () => {
+    };
+
+    await service.scanOnce();
+    await service.flushHealth();
+
+    const firstStateText = await fs.readFile(service.stateStore.stateFilePath, 'utf8');
+    const firstHealthText = await fs.readFile(service.stateStore.healthFilePath, 'utf8');
+    const firstStateStat = await fs.stat(service.stateStore.stateFilePath);
+    const firstHealthStat = await fs.stat(service.stateStore.healthFilePath);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 30);
+    });
+
+    await service.scanOnce();
+    await service.flushHealth();
+
+    const secondStateText = await fs.readFile(service.stateStore.stateFilePath, 'utf8');
+    const secondHealthText = await fs.readFile(service.stateStore.healthFilePath, 'utf8');
+    const secondStateStat = await fs.stat(service.stateStore.stateFilePath);
+    const secondHealthStat = await fs.stat(service.stateStore.healthFilePath);
+
+    assert.equal(secondStateText, firstStateText);
+    assert.equal(secondHealthText, firstHealthText);
+    assert.equal(secondStateStat.mtimeMs, firstStateStat.mtimeMs);
+    assert.equal(secondHealthStat.mtimeMs, firstHealthStat.mtimeMs);
+  } finally {
+    await capture.close();
+  }
+});
+
+test('服务写出的健康文件和服务锁文件使用本地时区偏移时间', async () => {
+  const sessionsDir = await createTempDir();
+  const runtimeDir = await createTempDir();
+  const capture = await startCaptureServer();
+  let service;
+
+  try {
+    const config = buildConfig({ sessionsDir, runtimeDir, port: capture.port });
+    service = new CodexNotiaService(config);
+    await service.stateStore.initialize();
+    service.ensureWrapperProcess = async () => {
+    };
+
+    await service.acquireLock();
+    await service.flushHealth();
+
+    const health = JSON.parse(await fs.readFile(service.stateStore.healthFilePath, 'utf8'));
+    const lock = JSON.parse(await fs.readFile(service.stateStore.lockFilePath, 'utf8'));
+
+    assert.match(health.updatedAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+    assert.match(health.serviceStartedAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+    assert.match(lock.startedAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+    assert.equal(Date.parse(health.serviceStartedAt), service.serviceStartedAtMs);
+    assert.equal(Date.parse(lock.startedAt), service.serviceStartedAtMs);
+    assert.equal(lock.startedAt, health.serviceStartedAt);
+  } finally {
+    await service?.releaseLock().catch(() => {
+    });
+    await capture.close();
+  }
+});
 
 test('只在 task_complete 后发送成功通知', async () => {
   const sessionsDir = await createTempDir();

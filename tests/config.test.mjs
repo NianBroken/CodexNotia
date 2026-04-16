@@ -7,6 +7,8 @@ import { loadConfig } from '../src/config.mjs';
 import { createDefaultState, StateStore } from '../src/state-store.mjs';
 import { CodexNotiaService } from '../src/service.mjs';
 
+const ISO_OFFSET_TIMESTAMP_PATTERN = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}[+-]\d\d:\d\d$/;
+
 /**
  * 配置、状态存储和运行兜底测试。
  * 这组用例专门锁住默认值解析、坏状态恢复和会话目录暂时缺失时的稳定性。
@@ -86,6 +88,70 @@ test('StateStore 遇到损坏的状态文件时会自动回退并备份坏文件
   assert.equal(
     stateDirEntries.some((entry) => entry.startsWith('service-state.json.corrupt-')),
     true
+  );
+});
+
+test('StateStore 会把旧 UTC 时间戳自动归一化为本地时区偏移格式', async () => {
+  const stateDir = await createTempDir();
+  const store = new StateStore(stateDir);
+  const filePath = path.join(stateDir, 'session.jsonl');
+
+  await fs.writeFile(store.stateFilePath, JSON.stringify({
+    version: 1,
+    bootstrapComplete: true,
+    files: {
+      [filePath]: {
+        filePath,
+        offset: 12,
+        remainder: '',
+        sessionId: 'session-1',
+        originator: 'Codex Desktop',
+        source: 'vscode',
+        currentTurnId: 'turn-1',
+        lastEventAt: '2026-04-16T11:53:27.664Z',
+        latestFinalAnswerText: '',
+        latestErrorMessage: '',
+        turns: {
+          'turn-1': {
+            startedAt: '2026-04-16T11:43:07.748Z',
+            lastEventAt: '2026-04-16T11:53:27.664Z',
+            finalAnswerText: '',
+            lastErrorMessage: '',
+            timeoutSuppressedAt: '2026-04-16T11:43:07.748Z'
+          }
+        },
+        primed: true
+      }
+    },
+    notifiedTurnKeys: {
+      'session-1:turn-1:success': '2026-04-16T11:53:27.664Z'
+    }
+  }, null, 2), 'utf8');
+
+  await store.initialize();
+
+  const state = store.getState();
+  const normalizedFileState = state.files[filePath];
+  const normalizedTurnState = normalizedFileState.turns['turn-1'];
+  const normalizedSentAt = state.notifiedTurnKeys['session-1:turn-1:success'];
+
+  assert.match(normalizedFileState.lastEventAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+  assert.match(normalizedTurnState.startedAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+  assert.match(normalizedTurnState.lastEventAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+  assert.match(normalizedTurnState.timeoutSuppressedAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+  assert.match(normalizedSentAt, ISO_OFFSET_TIMESTAMP_PATTERN);
+  assert.equal(Date.parse(normalizedFileState.lastEventAt), Date.parse('2026-04-16T11:53:27.664Z'));
+  assert.equal(Date.parse(normalizedTurnState.startedAt), Date.parse('2026-04-16T11:43:07.748Z'));
+  assert.equal(Date.parse(normalizedSentAt), Date.parse('2026-04-16T11:53:27.664Z'));
+
+  await store.save();
+
+  const persistedState = JSON.parse(await fs.readFile(store.stateFilePath, 'utf8'));
+  assert.equal(persistedState.files[filePath].lastEventAt, normalizedFileState.lastEventAt);
+  assert.equal(persistedState.files[filePath].turns['turn-1'].startedAt, normalizedTurnState.startedAt);
+  assert.equal(
+    persistedState.notifiedTurnKeys['session-1:turn-1:success'],
+    normalizedSentAt
   );
 });
 

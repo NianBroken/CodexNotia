@@ -8,10 +8,12 @@ import { StateStore } from './state-store.mjs';
 import {
   ensureDirectory,
   fileExists,
+  formatIsoDateTimeWithOffset,
   formatLocalDateTime,
   getCharacterLength,
   listJsonlFiles,
   normalizeNewlines,
+  normalizeTimestamp,
   nowIsoString,
   parseJsonLine,
   sleep,
@@ -202,7 +204,7 @@ export class CodexNotiaService {
     this.config = config;
     this.serviceStartedAt = new Date();
     this.serviceStartedAtMs = this.serviceStartedAt.getTime();
-    this.serviceStartedAtIso = this.serviceStartedAt.toISOString();
+    this.serviceStartedAtIso = formatIsoDateTimeWithOffset(this.serviceStartedAt);
     this.logFilePath = path.join(
       config.runtime.logDir,
       `codexnotia-${formatLocalDateTime(new Date()).slice(0, 10)}.log`
@@ -519,7 +521,7 @@ export class CodexNotiaService {
     } = options;
 
     const previousLatestEventAt = fileState.lastEventAt;
-    const eventTimestamp = event.timestamp ?? nowIsoString();
+    const eventTimestamp = normalizeTimestamp(event.timestamp, nowIsoString());
     fileState.lastEventAt = selectLatestTimestamp(previousLatestEventAt, eventTimestamp);
 
     if (event.type === 'session_meta') {
@@ -532,7 +534,7 @@ export class CodexNotiaService {
           sessionId: fileState.sessionId,
           originator: fileState.originator,
           source: fileState.source,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
       }
       return;
@@ -569,7 +571,7 @@ export class CodexNotiaService {
         const userMessage = extractUserMessage(event.payload);
         await this.logger.infoBlock('用户发送消息', toSingleLineLogText(userMessage), {
           sessionId: fileState.sessionId,
-          eventTimestamp: event.timestamp ?? nowIsoString(),
+          eventTimestamp,
           messageLength: getCharacterLength(userMessage)
         });
       }
@@ -586,18 +588,18 @@ export class CodexNotiaService {
       fileState.currentTurnId = turnId;
       fileState.latestFinalAnswerText = '';
       fileState.latestErrorMessage = '';
-      fileState.turns[turnId] = createTurnState(event.timestamp ?? nowIsoString());
+      fileState.turns[turnId] = createTurnState(eventTimestamp);
 
       if (allowLogs) {
         await this.logger.info('检测到新 turn', {
           sessionId: fileState.sessionId,
           turnId,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
         await this.logger.info('AI 开始处理', {
           sessionId: fileState.sessionId,
           turnId,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
       }
       return;
@@ -619,7 +621,7 @@ export class CodexNotiaService {
 
       if (currentTurn) {
         currentTurn.finalAnswerText = finalText;
-        currentTurn.lastEventAt = event.timestamp ?? nowIsoString();
+        currentTurn.lastEventAt = eventTimestamp;
       } else {
         fileState.latestFinalAnswerText = finalText;
       }
@@ -636,7 +638,7 @@ export class CodexNotiaService {
 
       if (currentTurn) {
         currentTurn.finalAnswerText = finalText;
-        currentTurn.lastEventAt = event.timestamp ?? nowIsoString();
+        currentTurn.lastEventAt = eventTimestamp;
       } else {
         fileState.latestFinalAnswerText = finalText;
       }
@@ -644,7 +646,7 @@ export class CodexNotiaService {
     }
 
     if (currentTurn) {
-      currentTurn.lastEventAt = event.timestamp ?? nowIsoString();
+      currentTurn.lastEventAt = eventTimestamp;
     }
 
     if (event.type === 'event_msg' && payloadType === 'exec_command_end') {
@@ -730,7 +732,7 @@ export class CodexNotiaService {
         fileState,
         turnState,
         turnId,
-        event.timestamp ?? nowIsoString()
+        eventTimestamp
       );
       const abortReason = buildAbortReasonMessage(
         event.payload.reason,
@@ -742,20 +744,20 @@ export class CodexNotiaService {
           sessionId: fileState.sessionId,
           turnId,
           reason: event.payload.reason,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
         await this.logger.warnBlock('AI 最终错误消息', toSingleLineLogText(abortReason), {
           sessionId: fileState.sessionId,
           turnId,
           reason: event.payload.reason,
           messageLength: getCharacterLength(abortReason),
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
       }
 
       const notification = buildErrorNotification(
         abortReason,
-        event.timestamp ?? nowIsoString(),
+        eventTimestamp,
         buildCodexNotificationOptions(this.config)
       );
 
@@ -763,7 +765,7 @@ export class CodexNotiaService {
         await this.logger.info('进入错误通知发送流程', {
           sessionId: fileState.sessionId,
           turnId,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
       }
       const notificationSent = await this.sendTurnNotification(notification, {
@@ -772,7 +774,7 @@ export class CodexNotiaService {
         metadata: {
           sessionId: fileState.sessionId,
           turnId,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         }
       });
 
@@ -780,7 +782,7 @@ export class CodexNotiaService {
         await this.logger.info('错误通知发送成功', {
           sessionId: fileState.sessionId,
           turnId,
-          eventTimestamp: event.timestamp ?? nowIsoString()
+          eventTimestamp
         });
       }
 
@@ -811,7 +813,7 @@ export class CodexNotiaService {
         fileState,
         turnState,
         turnId,
-        event.timestamp ?? nowIsoString()
+        eventTimestamp
       );
       const completionOutcome = resolveTaskCompleteOutcome(fileState, turnState, event.payload);
       const notificationKey = buildNotificationKey(fileState, turnId, completionOutcome.kind);
@@ -831,19 +833,19 @@ export class CodexNotiaService {
           await this.logger.warn('检测到完成事件携带失败结果', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
           await this.logger.warnBlock('AI 最终错误消息', toSingleLineLogText(completionOutcome.message), {
             sessionId: fileState.sessionId,
             turnId,
             messageLength: getCharacterLength(completionOutcome.message),
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
 
         const notification = buildErrorNotification(
           completionOutcome.message,
-          event.timestamp ?? nowIsoString(),
+          eventTimestamp,
           buildCodexNotificationOptions(this.config)
         );
 
@@ -851,7 +853,7 @@ export class CodexNotiaService {
           await this.logger.info('进入错误通知发送流程', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
         const notificationSent = await this.sendTurnNotification(notification, {
@@ -860,7 +862,7 @@ export class CodexNotiaService {
           metadata: {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           }
         });
 
@@ -868,7 +870,7 @@ export class CodexNotiaService {
           await this.logger.info('错误通知发送成功', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
       } else {
@@ -880,19 +882,19 @@ export class CodexNotiaService {
           await this.logger.info('检测到最终完成事件', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
           await this.logger.infoBlock('AI 最终完整消息', toSingleLineLogText(completionOutcome.message), {
             sessionId: fileState.sessionId,
             turnId,
             messageLength: getCharacterLength(completionOutcome.message),
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
 
         const notification = buildSuccessNotification(
           completionOutcome.message,
-          event.timestamp ?? nowIsoString(),
+          eventTimestamp,
           buildCodexNotificationOptions(this.config)
         );
 
@@ -900,7 +902,7 @@ export class CodexNotiaService {
           await this.logger.info('进入成功通知发送流程', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
         const notificationSent = await this.sendTurnNotification(notification, {
@@ -909,7 +911,7 @@ export class CodexNotiaService {
           metadata: {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           }
         });
 
@@ -917,7 +919,7 @@ export class CodexNotiaService {
           await this.logger.info('成功通知发送成功', {
             sessionId: fileState.sessionId,
             turnId,
-            eventTimestamp: event.timestamp ?? nowIsoString()
+            eventTimestamp
           });
         }
       }
@@ -1046,7 +1048,7 @@ export class CodexNotiaService {
       turnId,
       appLogsDir: resolveCodexAppLogsDir(this.config),
       messageLength: getCharacterLength(appLogErrorMessage),
-      eventTimestamp: eventTimestamp || nowIsoString()
+      eventTimestamp: normalizeTimestamp(eventTimestamp, nowIsoString())
     });
 
     return appLogErrorMessage;
@@ -1147,6 +1149,7 @@ export class CodexNotiaService {
     await this.stateStore.writeHealth({
       serviceName: this.config.service.name,
       pid: process.pid,
+      serviceStartedAt: this.serviceStartedAtIso,
       configPath: this.config.__meta.configPath,
       logFilePath: this.logFilePath,
       sessionsDir: this.config.codex.sessionsDir,
@@ -1181,7 +1184,7 @@ export class CodexNotiaService {
 
     await writeJsonFile(lockFilePath, {
       pid: process.pid,
-      startedAt: nowIsoString()
+      startedAt: this.serviceStartedAtIso
     });
   }
 

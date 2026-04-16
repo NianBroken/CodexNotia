@@ -129,8 +129,8 @@ export async function pushToBark(config, notification, logger) {
           currentNotification = shrinkNotificationForRetry(config, currentNotification);
 
           if (safeLogger) {
-            await safeLogger.warnBlock(
-              '通知内容因请求过大被缩短',
+            await safeLogger.infoBlock(
+              '通知内容因请求过大已自动缩短',
               renderNotificationSingleLine(currentNotification),
               {
                 attempt,
@@ -158,6 +158,27 @@ export async function pushToBark(config, notification, logger) {
     } catch (error) {
       lastError = error;
 
+      if (attempt < config.push.maxAttempts) {
+        if (safeLogger) {
+          await safeLogger.infoBlock(
+            '通知请求本次未成功，准备自动重试',
+            error instanceof Error ? error.stack || error.message : String(error),
+            {
+              currentAttempt: attempt,
+              nextAttempt: attempt + 1,
+              maxAttempts: config.push.maxAttempts,
+              retryDelayMs: config.push.retryDelayMs
+            }
+          );
+        }
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, config.push.retryDelayMs);
+        });
+
+        continue;
+      }
+
       if (safeLogger) {
         await safeLogger.errorBlock(
           '通知请求失败',
@@ -167,20 +188,6 @@ export async function pushToBark(config, notification, logger) {
             maxAttempts: config.push.maxAttempts
           }
         );
-      }
-
-      if (attempt < config.push.maxAttempts) {
-        if (safeLogger) {
-          await safeLogger.warn('准备进行通知重试', {
-            currentAttempt: attempt,
-            nextAttempt: attempt + 1,
-            retryDelayMs: config.push.retryDelayMs
-          });
-        }
-
-        await new Promise((resolve) => {
-          setTimeout(resolve, config.push.retryDelayMs);
-        });
       }
     }
   }

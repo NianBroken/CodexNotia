@@ -3,7 +3,9 @@ import path from 'node:path';
 import {
   ensureDirectory,
   formatLocalDateTime,
+  normalizeTimestamp,
   nowIsoString,
+  looksLikeIsoDateTime,
   toSafeLogText,
   writeJsonFile
 } from './utils.mjs';
@@ -131,6 +133,10 @@ function buildMetadataReplacer() {
       return value.toString();
     }
 
+    if (typeof value === 'string' && isTimestampMetadataField(_, value)) {
+      return normalizeTimestamp(value, value);
+    }
+
     if (value instanceof Error) {
       return {
         name: value.name,
@@ -149,4 +155,13 @@ function buildMetadataReplacer() {
 
     return value;
   };
+}
+
+function isTimestampMetadataField(fieldName, value) {
+  if (!looksLikeIsoDateTime(value)) {
+    return false;
+  }
+
+  return /(^|_)(at|time|timestamp)$/i.test(fieldName)
+    || /(At|Time|Timestamp)$/.test(fieldName);
 }
